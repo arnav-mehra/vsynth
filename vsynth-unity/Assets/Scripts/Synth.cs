@@ -43,7 +43,7 @@ public class Ops {
 public class AST {
     readonly Ops.Op op = Ops.Op.None;
     readonly List<AST> args = null;
-    readonly object val = null;
+    readonly public object val = null;
     public int height = 1;
 
     public AST(object v) {
@@ -60,19 +60,19 @@ public class AST {
     public object Eval() {
         return op switch {
             Ops.Op.None => val,
-            Ops.Op.Add => Ops.Add((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Sub => Ops.Sub((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Cro => Ops.Cro((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Rot => Ops.Rot((Vector3)args[0].Eval(), (Vector3)args[1].Eval(), (float)args[2].Eval()),
-            Ops.Op.ScM => Ops.ScM((Vector3)args[0].Eval(), (float)args[1].Eval()),
-            Ops.Op.ScD => Ops.ScD((Vector3)args[0].Eval(), (float)args[1].Eval()),
-            Ops.Op.Dst => Ops.Dst((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Dot => Ops.Dot((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Mag => Ops.Mag((Vector3)args[0].Eval()),
-            Ops.Op.FlM => Ops.FlM((float)args[0].Eval(), (float)args[1].Eval()),
-            Ops.Op.FlD => Ops.FlD((float)args[0].Eval(), (float)args[1].Eval()),
-            Ops.Op.FlA => Ops.FlA((float)args[0].Eval(), (float)args[1].Eval()),
-            Ops.Op.FlS => Ops.FlS((float)args[0].Eval(), (float)args[1].Eval()),
+            Ops.Op.Add => Ops.Add((Vector3)args[0].val, (Vector3)args[1].val),
+            Ops.Op.Sub => Ops.Sub((Vector3)args[0].val, (Vector3)args[1].val),
+            Ops.Op.Cro => Ops.Cro((Vector3)args[0].val, (Vector3)args[1].val),
+            Ops.Op.Rot => Ops.Rot((Vector3)args[0].val, (Vector3)args[1].val, (float)args[2].val),
+            Ops.Op.ScM => Ops.ScM((Vector3)args[0].val, (float)  args[1].val),
+            Ops.Op.ScD => Ops.ScD((Vector3)args[0].val, (float)  args[1].val),
+            Ops.Op.Dst => Ops.Dst((Vector3)args[0].val, (Vector3)args[1].val),
+            Ops.Op.Dot => Ops.Dot((Vector3)args[0].val, (Vector3)args[1].val),
+            Ops.Op.Mag => Ops.Mag((Vector3)args[0].val),
+            Ops.Op.FlM => Ops.FlM((float)  args[0].val, (float)  args[1].val),
+            Ops.Op.FlD => Ops.FlD((float)  args[0].val, (float)  args[1].val),
+            Ops.Op.FlA => Ops.FlA((float)  args[0].val, (float)  args[1].val),
+            Ops.Op.FlS => Ops.FlS((float)  args[0].val, (float)  args[1].val),
             _ => null
         };
     }
@@ -116,12 +116,11 @@ public class Synthesizer {
                 }
             }
             foreach (AST a in new_ls) {
-                object v = a.Eval();
-                if (!hs.Contains(v)) {
-                    hs.Add(v);
+                if (!hs.Contains(a.val)) {
+                    hs.Add(a.val);
                     ls.Add(a);
                 }
-            };
+            }
         }
 
         return ls;
@@ -152,7 +151,7 @@ public class Synthesizer {
             (Types.Type.Vec, Types.Type.Flt) => PushVecFltOps(ls, a1, a2),
             (Types.Type.Flt, Types.Type.Vec) => PushVecFltOps(ls, a2, a1),
             (Types.Type.Flt, Types.Type.Flt) => PushFltFltOps(ls, a1, a2),
-            _ => 0
+            _ => null
         };
     }
 
@@ -198,8 +197,13 @@ public class Synthesizer {
 
 public class Synth : MonoBehaviour {
 	private void Start() {
-        var s = new Synthesizer(new() { Vector3.right, Vector3.up, Vector3.forward });
-        var res = s.GenASTs(4);
+        var synth = new Synthesizer(new() {
+            UnityEngine.Random.insideUnitSphere,
+            UnityEngine.Random.insideUnitSphere,
+            UnityEngine.Random.insideUnitSphere
+        });
+        var res = synth.GenASTs(4);
+
         int vec_ret_cnt = res.FindAll(a => a.RetType() == Types.Type.Vec).Count;
         int flt_ret_cnt = res.Count - vec_ret_cnt;
 
