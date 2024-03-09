@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,13 +39,22 @@ public class Ops {
     public static float FlD(float a, float b) => a / b;
     public static float FlA(float a, float b) => a + b;
     public static float FlS(float a, float b) => a - b;
+
+    static int[] COMPLEXITIES = {
+        0,
+        1, 1, 1, 2, 1, 1,
+        2, 1, 1, 1, 1, 1, 1
+    };
+
+    public static int Complexity(Op op) => COMPLEXITIES[(int)op];
+
 }
 
 public class AST {
     readonly Ops.Op op = Ops.Op.None;
     readonly List<AST> args = null;
     readonly public object val = null;
-    public int height = 1;
+    readonly public int complexity = 0;
 
     public AST(object v) {
         val = v;
@@ -54,7 +64,10 @@ public class AST {
         op = o;
         args = a;
         val = Eval();
-        a.ForEach(p => height = Math.Max(height, p.height + 1));
+        complexity = a.Aggregate(
+            Ops.Complexity(o),
+            (acc, p) => acc + p.complexity
+        );
     }
 
     public object Eval() {
@@ -100,30 +113,50 @@ public class Synthesizer {
     static public int VecCnt = 0;
 
     public List<Vector3> env;
+    public object target;
 
-    public Synthesizer(List<Vector3> e) => env = e;
+    public Synthesizer(List<Vector3> e, object t = null) {
+        target = t;
+        env = e;
+    }
 
-    public List<AST> GenASTs(int depth) {
+    public List<AST> GenASTs(int complexity) {
         List<AST> ls = GenBaseASTs();
         HashSet<object> hs = new();
 
-        for (int d = 2; d <= depth; d++) {
-            List<AST> new_ls = new();
+        for (int c = 1; c <= complexity; c++) {
             for (int i = 0; i < ls.Count; i++) {
-                PushUniOps(new_ls, d, ls[i]);
-                for (int j = i + 1; j < ls.Count; j++) {
-                    PushBinOps(new_ls, d, ls[i], ls[j]);
+                List<AST> new_ls = new();
+
+                PushUniOps(new_ls, ls[i]);
+                for (int j = i; j < ls.Count; j++) {
+                    PushBinOps(new_ls, ls[i], ls[j]);
                 }
-            }
-            foreach (AST a in new_ls) {
-                if (!hs.Contains(a.val)) {
-                    hs.Add(a.val);
-                    ls.Add(a);
+
+                foreach (AST a in new_ls) {
+                    if (a.val.Equals(target)) {
+                        ls.Add(a);
+                        return ls;
+                    }
+                    if (a.complexity > c) {
+                        continue;
+                    }
+                    if (!hs.Contains(a.val)) {
+                        hs.Add(a.val);
+                        ls.Add(a);
+                    }
                 }
             }
         }
 
         return ls;
+    }
+
+    public ValueTuple<AST, List<AST>> FindAST(int complexity) {
+        List<AST> ls = GenASTs(complexity);
+        bool lastIsCorrect = (ls.Count != 0) && ls.Last().val.Equals(target);
+        AST res = lastIsCorrect ? ls.Last() : null;
+        return (res, ls);
     }
 
     public List<AST> GenBaseASTs() {
@@ -133,18 +166,14 @@ public class Synthesizer {
         return ls;
     }
 
-    public void PushUniOps(List<AST> ls, int depth, AST a1) {
-        if (a1.height + 1 != depth) return;
-
+    public void PushUniOps(List<AST> ls, AST a1) {
         var _ = a1.RetType() switch {
             (Types.Type.Vec) => PushVecOps(ls, a1),
             _ => 0
         };
     }
 
-    public void PushBinOps(List<AST> ls, int depth, AST a1, AST a2) {
-        if (Math.Max(a1.height, a2.height) + 1 != depth) return;
-
+    public void PushBinOps(List<AST> ls, AST a1, AST a2) {
         Types.Pair tp = new(a1.RetType(), a2.RetType());
         var _ = tp switch {
             (Types.Type.Vec, Types.Type.Vec) => PushVecVecOps(ls, a1, a2),
@@ -179,29 +208,77 @@ public class Synthesizer {
     object PushVecFltOps(List<AST> ls, AST a1, AST a2) {
         VecFltCnt += 1;
         ls.Add(new(Ops.Op.ScM, new() { a1, a2 }));
-        //ls.Add(new(Ops.Op.ScD, new() { a1, a2 }));
         return null;
     }
 
     object PushFltFltOps(List<AST> ls, AST a1, AST a2) {
         FltFltCnt += 3;
+        float v1 = (float)a1.val;
+        float v2 = (float)a2.val;
         ls.Add(new(Ops.Op.FlM, new() { a1, a2 }));
-        ls.Add(new(Ops.Op.FlD, new() { a1, a2 }));
-        ls.Add(new(Ops.Op.FlD, new() { a2, a1 }));
-        //ls.Add(new(Ops.Op.FlA, new() { a1, a2 }));
-        //ls.Add(new(Ops.Op.FlS, new() { a1, a2 }));
-        //ls.Add(new(Ops.Op.FlS, new() { a2, a1 }));
+        if (v1 != 0) ls.Add(new(Ops.Op.FlD, new() { a2, a1 }));
+        if (v2 != 0) ls.Add(new(Ops.Op.FlD, new() { a1, a2 }));
         return null;
     }
-} 
+
+    public string StringifyAST(AST a) {
+        string s = a.ToString();
+        for (int i = 0; i < env.Count(); i++) {
+            char c = (char)(i + 'a');
+            string v = env[i].ToString().Replace('(', '<').Replace(')', '>');
+            s = s.Replace(v, c.ToString());
+        }
+        return s;
+    }
+}
 
 public class Synth : MonoBehaviour {
 	private void Start() {
-        var synth = new Synthesizer(new() {
-            UnityEngine.Random.insideUnitSphere,
-            UnityEngine.Random.insideUnitSphere,
-            UnityEngine.Random.insideUnitSphere
+        TestFind();
+        //TestGen();
+    }
+
+    void TestFind() {
+        var synth = new Synthesizer(
+            new() {
+                new Vector3(1, 0, 3),
+                new Vector3(-1, 4, 2)
+            },
+            new Vector3(0.5f, 0, 1.5f)
+        );
+
+        var (res, ls) = synth.FindAST(6);
+        
+        ValueTuple<float, AST> best = (float.PositiveInfinity, new(null));
+        ls.ForEach(a => {
+            if (!a.val.GetType().Equals(synth.target.GetType())) return;
+
+            if (a.RetType() == Types.Type.Vec) {
+                float terr = Vector3.Distance((Vector3)a.val, (Vector3)synth.target);
+                if (terr < best.Item1) best = (terr, a);
+            }
         });
+
+        Debug.Log(
+            "Found: " + (res != null)
+            + "\nASTs searched: " + ls.Count
+            + "\nBest AST: " + synth.StringifyAST(best.Item2)
+            + "\nErr: " + best.Item1
+        );
+
+        return;
+    }
+
+    void TestGen() {
+        var synth = new Synthesizer(
+            new() {
+                UnityEngine.Random.insideUnitSphere,
+                UnityEngine.Random.insideUnitSphere,
+                UnityEngine.Random.insideUnitSphere
+            },
+            null
+        );
+
         var res = synth.GenASTs(4);
 
         int vec_ret_cnt = res.FindAll(a => a.RetType() == Types.Type.Vec).Count;
