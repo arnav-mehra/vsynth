@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,24 +41,20 @@ public class Ops {
 }
 
 public class AST {
-    object val;
-    Ops.Op op;
-    List<AST> args;
-    public int height;
+    readonly Ops.Op op = Ops.Op.None;
+    readonly List<AST> args = null;
+    readonly object val = null;
+    public int height = 1;
 
     public AST(object v) {
         val = v;
-        op = Ops.Op.None;
-        height = 1;
     }
 
     public AST(Ops.Op o, List<AST> a) {
         op = o;
         args = a;
-
-        height = 0;
-        foreach (AST p in a) height = Math.Max(height, p.height);
-        height += 1;
+        val = Eval();
+        a.ForEach(p => height = Math.Max(height, p.height + 1));
     }
 
     public object Eval() {
@@ -68,12 +63,16 @@ public class AST {
             Ops.Op.Add => Ops.Add((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
             Ops.Op.Sub => Ops.Sub((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
             Ops.Op.Cro => Ops.Cro((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Dot => Ops.Dot((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Dst => Ops.Dst((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
-            Ops.Op.Mag => Ops.Mag((Vector3)args[0].Eval()),
             Ops.Op.Rot => Ops.Rot((Vector3)args[0].Eval(), (Vector3)args[1].Eval(), (float)args[2].Eval()),
             Ops.Op.ScM => Ops.ScM((Vector3)args[0].Eval(), (float)args[1].Eval()),
             Ops.Op.ScD => Ops.ScD((Vector3)args[0].Eval(), (float)args[1].Eval()),
+            Ops.Op.Dst => Ops.Dst((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
+            Ops.Op.Dot => Ops.Dot((Vector3)args[0].Eval(), (Vector3)args[1].Eval()),
+            Ops.Op.Mag => Ops.Mag((Vector3)args[0].Eval()),
+            Ops.Op.FlM => Ops.FlM((float)args[0].Eval(), (float)args[1].Eval()),
+            Ops.Op.FlD => Ops.FlD((float)args[0].Eval(), (float)args[1].Eval()),
+            Ops.Op.FlA => Ops.FlA((float)args[0].Eval(), (float)args[1].Eval()),
+            Ops.Op.FlS => Ops.FlS((float)args[0].Eval(), (float)args[1].Eval()),
             _ => null
         };
     }
@@ -82,18 +81,23 @@ public class AST {
 
     public override string ToString() {
         if (op == Ops.Op.None) {
-            return "AST { val: " + val.ToString() + " }";
+            return val.ToString().Replace('(', '<').Replace(')', '>');
         } else {
-            string s = "AST { op: " + op.ToString() + ", args: [\n";
-            foreach (AST a in args) s += "\t" + a.ToString() + "\n";
-            return s + "\n] }";
+            string s = op + "(";
+            foreach (AST a in args) s += a.ToString() + ",";
+            return s.TrimEnd(',') + ")";
         }
     }
 }
 
 public class Synthesizer {
-    static List<float> STD_ANGLES = new() { 90.0f, 180.0f, 270.0f };
-    static List<Vector3> STD_VECS = new() { Vector3.forward, Vector3.up, Vector3.right };
+    static readonly List<float> STD_ANGLES = new() { /*90.0f,*/ 180.0f /*, 270.0f*/ };
+    static readonly List<Vector3> STD_VECS = new() { /*Vector3.forward, Vector3.up, Vector3.right*/ };
+
+    static public int VecVecCnt = 0;
+    static public int VecFltCnt = 0;
+    static public int FltFltCnt = 0;
+    static public int VecCnt = 0;
 
     public List<Vector3> env;
 
@@ -101,15 +105,25 @@ public class Synthesizer {
 
     public List<AST> GenASTs(int depth) {
         List<AST> ls = GenBaseASTs();
-        for (int d = 1; d <= depth; d++) {
-            int len = ls.Count;
-            for (int i = 0; i < len; i++) {
-                PushUniOps(ls, d, ls[i]);
-                for (int j = i + 1; j < len; j++) {
-                    PushBinOps(ls, d, ls[i], ls[j]);
+        HashSet<object> hs = new();
+
+        for (int d = 2; d <= depth; d++) {
+            List<AST> new_ls = new();
+            for (int i = 0; i < ls.Count; i++) {
+                PushUniOps(new_ls, d, ls[i]);
+                for (int j = i + 1; j < ls.Count; j++) {
+                    PushBinOps(new_ls, d, ls[i], ls[j]);
                 }
             }
+            foreach (AST a in new_ls) {
+                object v = a.Eval();
+                if (!hs.Contains(v)) {
+                    hs.Add(v);
+                    ls.Add(a);
+                }
+            };
         }
+
         return ls;
     }
 
@@ -142,12 +156,14 @@ public class Synthesizer {
         };
     }
 
-    int PushVecOps(List<AST> ls, AST a1) {
+    object PushVecOps(List<AST> ls, AST a1) {
+        VecCnt += 1;
         ls.Add(new(Ops.Op.Mag, new() { a1 }));
-        return 0;
+        return null;
     }
 
-    int PushVecVecOps(List<AST> ls, AST a1, AST a2) {
+    object PushVecVecOps(List<AST> ls, AST a1, AST a2) {
+        VecVecCnt += 5 + STD_ANGLES.Count * 2;
         ls.Add(new(Ops.Op.Add, new() { a1, a2 }));
         ls.Add(new(Ops.Op.Sub, new() { a1, a2 }));
         ls.Add(new(Ops.Op.Sub, new() { a2, a1 }));
@@ -158,39 +174,52 @@ public class Synthesizer {
             ls.Add(new(Ops.Op.Rot, new() { a1, a2, new(a) }));
             ls.Add(new(Ops.Op.Rot, new() { a2, a1, new(a) }));
 		}
-        return 0;
+        return null;
     }
 
-    int PushVecFltOps(List<AST> ls, AST a1, AST a2) {
+    object PushVecFltOps(List<AST> ls, AST a1, AST a2) {
+        VecFltCnt += 1;
         ls.Add(new(Ops.Op.ScM, new() { a1, a2 }));
-        ls.Add(new(Ops.Op.ScD, new() { a1, a2 }));
-        return 0;
+        //ls.Add(new(Ops.Op.ScD, new() { a1, a2 }));
+        return null;
     }
 
-    int PushFltFltOps(List<AST> ls, AST a1, AST a2) {
+    object PushFltFltOps(List<AST> ls, AST a1, AST a2) {
+        FltFltCnt += 3;
         ls.Add(new(Ops.Op.FlM, new() { a1, a2 }));
         ls.Add(new(Ops.Op.FlD, new() { a1, a2 }));
         ls.Add(new(Ops.Op.FlD, new() { a2, a1 }));
-        ls.Add(new(Ops.Op.FlA, new() { a1, a2 }));
-        ls.Add(new(Ops.Op.FlS, new() { a1, a2 }));
-        ls.Add(new(Ops.Op.FlS, new() { a2, a1 }));
-        return 0;
+        //ls.Add(new(Ops.Op.FlA, new() { a1, a2 }));
+        //ls.Add(new(Ops.Op.FlS, new() { a1, a2 }));
+        //ls.Add(new(Ops.Op.FlS, new() { a2, a1 }));
+        return null;
     }
 } 
 
 public class Synth : MonoBehaviour {
 	private void Start() {
-        //AST a = new(Vector3.one);
-        //AST b = new(Vector3.one);
-        //AST c = new(Ops.Op.Add, new() { a, b });
-        //object res = c.Eval().ToString();
-        //Debug.Log(res);
+        var s = new Synthesizer(new() { Vector3.right, Vector3.up, Vector3.forward });
+        var res = s.GenASTs(4);
+        int vec_ret_cnt = res.FindAll(a => a.RetType() == Types.Type.Vec).Count;
+        int flt_ret_cnt = res.Count - vec_ret_cnt;
 
-        var s = new Synthesizer(new() { Vector3.one, Vector3.one });
-        var res = s.GenASTs(2);
-        Debug.Log(res.Count);   
-        foreach (AST a in res) {
-            Debug.Log(a.Eval());
+        string str = (
+            "\nAST Count: " + res.Count
+            + "\n"
+            + "\nVecRetCnt: " + vec_ret_cnt
+            + "\nFltRetCnt: " + flt_ret_cnt
+            + "\n"
+            + "\nVecCnt: "    + Synthesizer.VecCnt
+            + "\nVecVecCnt: " + Synthesizer.VecVecCnt
+            + "\nVecFltCnt: " + Synthesizer.VecFltCnt
+            + "\nFltFltCnt: " + Synthesizer.FltFltCnt
+            + "\n"
+            + "\nExample ASTs:\n"
+        );
+        for (int i = 0; i < 3; i++) {
+            AST a = res[(int)Math.Floor(UnityEngine.Random.value * res.Count)];
+            str += a.ToString() + "\n";
         }
-	}
+        Debug.Log(str);
+    }
 }

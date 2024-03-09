@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PixelRect:
     serializedVersion: 2
-    x: 1596
+    x: 1551.2001
     y: 320
     width: 891.2
     height: 448.80002
   m_ShowMode: 4
-  m_Title: Console
+  m_Title: Game
   m_RootView: {fileID: 5}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -270,7 +270,7 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1869.6
+    x: 1824.8
     y: 350.4
     width: 616.6
     height: 32.6
@@ -444,7 +444,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 96590000
     m_LastClickedID: 22934
-    m_ExpandedIDs: 000000008a59000000ca9a3b
+    m_ExpandedIDs: 000000008a590000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -548,8 +548,8 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1596
-    y: 350.4
+    x: 0
+    y: 19
     width: 272.6
     height: 32.6
   m_SerializedDataModeController:
@@ -994,7 +994,7 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1596
+    x: 1551.2001
     y: 404
     width: 891.2
     height: 324.2
