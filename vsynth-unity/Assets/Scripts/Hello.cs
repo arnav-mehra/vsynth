@@ -1,9 +1,11 @@
 using UnityEngine;
 
 using static Assets.Scripts.Test.Test;
+using Assets.Scripts.Test;
 
 public class Hello : MonoBehaviour {
     void Start() {
+        /*
         var synth = new Synth(
             new() {
                 new Vector3(1, 0, 3),
@@ -11,8 +13,8 @@ public class Hello : MonoBehaviour {
             },
             new Vector3(0.5f, 0, 1.5f)
         );
-
-        /*
+        */
+        
         var synth = new Synth(
             new() {
                 UnityEngine.Random.insideUnitSphere,
@@ -20,8 +22,7 @@ public class Hello : MonoBehaviour {
             },
             null
         );
-        */
 
-        TestFind(synth, 8);
+        TestGen(synth, 7);
     }
 }
