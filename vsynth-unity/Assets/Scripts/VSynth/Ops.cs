@@ -41,10 +41,4 @@ namespace Assets.Scripts.Ops {
             return COMPLEXITIES[(int)op];
         }
     }
-
-    public class Types {
-        public enum OpType {
-            Vec, Flt
-        }
-    }
 }

@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\VSynth\Synth.cs" />
     <Compile Include="Assets\Scripts\VSynth\Test.cs" />
     <Compile Include="Assets\Scripts\VSynth\AST.cs" />
+    <Compile Include="Assets\Scripts\VSynth\LSC.cs" />
     <Compile Include="Assets\Scripts\VSynth\Ops.cs" />
     <Compile Include="Assets\Scripts\Hello.cs" />
   </ItemGroup>

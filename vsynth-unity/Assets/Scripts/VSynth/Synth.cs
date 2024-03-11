@@ -5,17 +5,19 @@ using UnityEngine;
 
 using static Assets.Scripts.Ops.Ops;
 using static Assets.Scripts.Ops.ComplexityExt;
-using static Assets.Scripts.Ops.Types;
+using Assets.Scripts.LSC;
 
 public class Synth {
     static readonly List<float> STD_ANGLES = new() { /*90.0f,*/ 180.0f /*, 270.0f*/ };
     static readonly List<Vector3> STD_VECS = new() { /*Vector3.forward, Vector3.up, Vector3.right*/ };
 
+    // stats
     public int VecVecCnt = 0;
     public int VecFltCnt = 0;
     public int FltFltCnt = 0;
     public int VecCnt = 0;
 
+    // synthesis context
     public List<Vector3> env;
     public object target;
 
@@ -24,7 +26,7 @@ public class Synth {
         env = e;
     }
 
-    public ValueTuple<AST, List<AST>> FindAST(int complexity) {
+    public (AST, List<AST>) FindAST(int complexity) {
         List<AST> ls = GenASTs(complexity);
         bool lastIsCorrect = (ls.Count != 0) && ls.Last().val.Equals(target);
         AST res = lastIsCorrect ? ls.Last() : null;
@@ -33,41 +35,29 @@ public class Synth {
 
     public List<AST> GenASTs(int complexity) {
         List<AST> ls = GenBaseASTs();
-        HashSet<object> seen = new();
         List<int> c_idx = new() { 0, ls.Count };
+        Dictionary<object, AST> seen = ls.ToDictionary(x => x.val, x => x, new LSC());
 
         for (int c = 1; c <= complexity; c++) {
             List<AST> new_ls = new();
 
             // push all ops that achieve complexity c.
-            for (int op_c = MIN_OP_C; op_c <= MAX_OP_C; op_c++) {
-                int ch_c = c - op_c; // children complexity.
-                if (ch_c < 0) continue;
+            for (int op_c = MIN_OP_C; op_c <= Math.Min(MAX_OP_C, c); op_c++) {
+                int children_c = c - op_c; // children complexity.
 
-                for (int i = c_idx[ch_c]; i < c_idx[ch_c + 1]; i++) {
+                for (int i = c_idx[children_c]; i < c_idx[children_c + 1]; i++) {
                     PushUniOps(new_ls, ls[i], op_c);
                 }
-                for (int i = c_idx[0]; i < c_idx[ch_c + 1]; i++) {
-                    int j_ch_c = ch_c - ls[i].complexity;
-                    if (j_ch_c < 0) continue;
-                    for (int j = c_idx[j_ch_c]; j < c_idx[j_ch_c + 1]; j++) {
+                for (int i = c_idx[0]; i < c_idx[children_c + 1]; i++) {
+                    int j_child_c = children_c - ls[i].complexity;
+                    for (int j = c_idx[j_child_c]; j < c_idx[j_child_c + 1]; j++) {
                         PushBinOps(new_ls, ls[i], ls[j], op_c);
                     }
                 }
             }
 
             // filter out repeats, search for result.
-            foreach (AST a in new_ls) {
-                if (a.val.Equals(target)) {
-                    ls.Add(a);
-                    return ls;
-                }
-                if (!seen.Contains(a.val)) {
-                    seen.Add(a.val);
-                    ls.Add(a);
-                }
-            }
-
+            ls.AddRange(new_ls.Where(a => seen.TryAdd(a.val, a)));
             c_idx.Add(ls.Count);
         }
 
@@ -82,18 +72,18 @@ public class Synth {
     }
 
     void PushUniOps(List<AST> ls, AST a1, int ch_c) {
-        var _ = a1.RetType() switch {
-            OpType.Vec => PushVecOps(ls, a1, ch_c),
+        var _ = a1.val switch {
+            Vector3 => PushVecOps(ls, a1, ch_c),
             _ => null
         };
     }
 
     void PushBinOps(List<AST> ls, AST a1, AST a2, int ch_c) {
-        var _ = (a1.RetType(), a2.RetType()) switch {
-            (OpType.Vec, OpType.Vec) => PushVecVecOps(ls, a1, a2, ch_c),
-            (OpType.Vec, OpType.Flt) => PushVecFltOps(ls, a1, a2, ch_c),
-            (OpType.Flt, OpType.Vec) => PushVecFltOps(ls, a2, a1, ch_c),
-            (OpType.Flt, OpType.Flt) => PushFltFltOps(ls, a1, a2, ch_c),
+        var _ = (a1.val, a2.val) switch {
+            (Vector3, Vector3) => PushVecVecOps(ls, a1, a2, ch_c),
+            (Vector3, float  ) => PushVecFltOps(ls, a1, a2, ch_c),
+            (float,   Vector3) => PushVecFltOps(ls, a2, a1, ch_c),
+            (float,   float  ) => PushFltFltOps(ls, a1, a2, ch_c),
             _ => null
         };
     }
@@ -171,5 +161,13 @@ public class Synth {
             s = s.Replace(v, c.ToString());
         }
         return s;
+    }
+
+    public void TransposeEnv(List<Vector3> new_env, List<AST> ls) {
+        Dictionary<object, object> env_map = env
+            .Zip(new_env, (a, b) => ((object)a, (object)b))
+            .ToDictionary(v => v.Item1, v => v.Item2);
+
+        ls.ForEach(a => a.TransposedEval(env_map));
     }
 }
