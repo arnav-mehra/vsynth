@@ -7,9 +7,41 @@ using static Assets.Scripts.Ops.Ops;
 using static Assets.Scripts.Ops.ComplexityExt;
 using Assets.Scripts.LSC;
 
+public class SynthResults {
+    public List<List<AST>> table = new();
+    public Dictionary<object, AST> seen = new(new LSC());
+
+    public SynthResults() {}
+
+    public List<int> RowLens {
+        get => table.ConvertAll(row => row.Count);
+    }
+
+    public void AddRow(List<AST> ls) {
+        table.Add(ls.Where(a => seen.TryAdd(a.val, a)).ToList());
+    }
+
+    public int Rows {
+        get => table.Count;
+    }
+
+    public void Transpose(List<object> old_env, List<object> new_env) {
+        Dictionary<object, object> env_map = old_env
+            .Zip(new_env, (a, b) => (a, b))
+            .ToDictionary(v => v.a, v => v.b);
+
+        seen.Clear();
+        table.ForEach(row =>
+            row.ForEach(a =>
+                seen.TryAdd(a.TransposedEval(env_map), a)
+            )
+        );
+    }
+}
+
 public class Synth {
     static readonly List<float> STD_ANGLES = new() { /*90.0f,*/ 180.0f /*, 270.0f*/ };
-    static readonly List<Vector3> STD_VECS = new() { /*Vector3.forward, Vector3.up, Vector3.right*/ };
+    static readonly List<object> STD_ENV = new() { /*Vector3.forward, Vector3.up, Vector3.right*/ };
 
     // stats
     public int VecVecCnt = 0;
@@ -17,59 +49,51 @@ public class Synth {
     public int FltFltCnt = 0;
     public int VecCnt = 0;
 
-    // synthesis context
-    public List<Vector3> env;
-    public object target;
+    public List<object> env = new();
+    public SynthResults res = new();
 
-    public Synth(List<Vector3> e, object t = null) {
-        target = t;
-        env = e;
+    public Synth(int var_cnt) {
+        env = Enumerable.Range(1, var_cnt).ToList()
+            .ConvertAll(v => (object)UnityEngine.Random.insideUnitSphere);
     }
 
-    public (AST, List<AST>) FindAST(int complexity) {
-        List<AST> ls = GenASTs(complexity);
-        bool lastIsCorrect = (ls.Count != 0) && ls.Last().val.Equals(target);
-        AST res = lastIsCorrect ? ls.Last() : null;
-        return (res, ls);
+    public List<AST> FindAST(List<object> targets, List<object> user_env, int complexity) {
+        GenASTs(complexity);
+        res.Transpose(env, user_env);
+        return targets.ConvertAll(target =>
+            res.seen.ContainsKey(target) ? res.seen[target] : null
+        );
     }
 
-    public List<AST> GenASTs(int complexity) {
-        List<AST> ls = GenBaseASTs();
-        List<int> c_idx = new() { 0, ls.Count };
-        Dictionary<object, AST> seen = ls.ToDictionary(x => x.val, x => x, new LSC());
+    public void GenASTs(int complexity) {
+        for (int c = res.Rows; c <= complexity; c++) {
+            if (c == 0) {
+                res.AddRow(GenBaseASTs());
+                continue;
+            }
 
-        for (int c = 1; c <= complexity; c++) {
-            List<AST> new_ls = new();
+            List<AST> new_row = new();
 
             // push all ops that achieve complexity c.
             for (int op_c = MIN_OP_C; op_c <= Math.Min(MAX_OP_C, c); op_c++) {
                 int children_c = c - op_c; // children complexity.
-
-                for (int i = c_idx[children_c]; i < c_idx[children_c + 1]; i++) {
-                    PushUniOps(new_ls, ls[i], op_c);
-                }
-                for (int i = c_idx[0]; i < c_idx[children_c + 1]; i++) {
-                    int j_child_c = children_c - ls[i].complexity;
-                    for (int j = c_idx[j_child_c]; j < c_idx[j_child_c + 1]; j++) {
-                        PushBinOps(new_ls, ls[i], ls[j], op_c);
-                    }
-                }
+                
+                res.table[children_c].ForEach(a => PushUniOps(new_row, a, op_c));
+                res.table.Take(children_c + 1).ToList().ForEach(row => {
+                    row.ForEach(a => {
+                        int rem_child_c = children_c - a.complexity;
+                        res.table[rem_child_c].ForEach(b => PushBinOps(new_row, a, b, op_c));
+                    });
+                });
             }
 
-            // filter out repeats, search for result.
-            ls.AddRange(new_ls.Where(a => seen.TryAdd(a.val, a)));
-            c_idx.Add(ls.Count);
+            res.AddRow(new_row);
         }
-
-        return ls;
     }
 
-    List<AST> GenBaseASTs() {
-        List<AST> ls = new();
-        foreach (Vector3 v in env) ls.Add(new(v));
-        foreach (Vector3 v in STD_VECS) ls.Add(new(v));
-        return ls;
-    }
+    List<AST> GenBaseASTs() => (
+        env.Concat(STD_ENV).ToList().ConvertAll(v => new AST(v))
+    );
 
     void PushUniOps(List<AST> ls, AST a1, int ch_c) {
         var _ = a1.val switch {
@@ -161,13 +185,5 @@ public class Synth {
             s = s.Replace(v, c.ToString());
         }
         return s;
-    }
-
-    public void TransposeEnv(List<Vector3> new_env, List<AST> ls) {
-        Dictionary<object, object> env_map = env
-            .Zip(new_env, (a, b) => ((object)a, (object)b))
-            .ToDictionary(v => v.Item1, v => v.Item2);
-
-        ls.ForEach(a => a.TransposedEval(env_map));
     }
 }

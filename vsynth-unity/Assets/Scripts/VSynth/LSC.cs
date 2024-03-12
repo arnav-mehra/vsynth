@@ -21,13 +21,13 @@ namespace Assets.Scripts.LSC {
 	}
 
 	static class RoundExt {
-		public static int SIG_DIGITS = 6;
+		public static int SIG_DIGITS = 10;
 
 		public static float Round(this float f) => (float)Math.Round(f, SIG_DIGITS);
 	}
 
 	class VecLSC {
-		public static bool Equals(Vector3 v1, Vector3 v2){
+		public static bool Equals(Vector3 v1, Vector3 v2) {
 			return v1.x.Round() == v2.x.Round()
 				&& v1.y.Round() == v2.y.Round()
 				&& v1.z.Round() == v2.z.Round();

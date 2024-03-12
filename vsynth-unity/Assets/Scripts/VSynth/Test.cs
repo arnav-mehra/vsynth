@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -16,34 +16,30 @@ namespace Assets.Scripts.Test {
     }
 
 	public class Test {
-		public static void TestFind(Synth synth, int complexity) {
+		public static void TestFind(Synth synth, List<object> targets, List<object> env, int complexity) {
             Timer.Start();
-            var (res, ls) = synth.FindAST(complexity);
+            var ls = synth.FindAST(targets, env, complexity);
             float t = Timer.End() / 1000.0f;
 
-            var (err, best_ast) = ls
-                .FindAll(a => a.val is Vector3 && synth.target is Vector3)
-                .ConvertAll(a => (Vector3.Distance((Vector3)a.val, (Vector3)synth.target), a))
-                .Max();
+            string s = "";
+            targets.Zip(ls, (a, b) => (a, b)).ToList().ForEach(p => {
+                s += "\nTarget: " + p.a
+                   + "\nFound: " + (p.b == null ? "Nope." :  synth.StringifyAST(p.b))
+                   + "\n";
+            });
+            s += "\nElapsed seconds: " + t
+               + "\nPerformance: " + (ls.Count / t) + " ASTs/s"
+               + "\n";
 
-            Debug.Log(
-                "Found: " + (res != null)
-                + "\nASTs searched: " + ls.Count
-                + "\nBest AST: " + synth.StringifyAST(best_ast)
-                + "\nComplexity: " + best_ast.complexity
-                + "\nErr: " + err
-                + "\n"
-                + "\nElapsed seconds: " + t
-                + "\nPerformance: " + (ls.Count / t) + " ASTs/s"
-                + "\n"
-            );
+            Debug.Log(s);
         }
 
         public static int TestGen(Synth synth, int complexity) {
             Timer.Start();
-            var res = synth.GenASTs(complexity);
+            synth.GenASTs(complexity);
             float t = Timer.End() / 1000.0f;
 
+            var res = synth.res.table.Aggregate((acc, ls) => acc.Concat(ls).ToList());
             int vec_ret_cnt = res.FindAll(a => a.val is Vector3).Count;
             int flt_ret_cnt = res.Count - vec_ret_cnt;
 
@@ -57,6 +53,8 @@ namespace Assets.Scripts.Test {
                 + "\nVecVecCnt: " + synth.VecVecCnt
                 + "\nVecFltCnt: " + synth.VecFltCnt
                 + "\nFltFltCnt: " + synth.FltFltCnt
+                + "\n"
+                + "\nList: " + synth.res.table.Aggregate("", (acc, ls) => acc + ls.Count + ", ")
                 + "\n"
                 + "\nElapsed seconds: " + t
                 + "\nPerformance: " + (res.Count / t) + " ASTs/s"
