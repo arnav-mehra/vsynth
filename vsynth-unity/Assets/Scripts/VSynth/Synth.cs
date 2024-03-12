@@ -6,6 +6,7 @@ using UnityEngine;
 using static Assets.Scripts.Ops.Ops;
 using static Assets.Scripts.Ops.ComplexityExt;
 using Assets.Scripts.LSC;
+using Assets.Scripts.Ops;
 
 public class SynthResults {
     public List<List<AST>> table = new();
@@ -36,6 +37,81 @@ public class SynthResults {
                 seen.TryAdd(a.TransposedEval(env_map), a)
             )
         );
+    }
+}
+
+public class ProgramBank
+{
+    static readonly List<float> STD_ANGLES = new() { /*90.0f,*/ 180.0f /*, 270.0f*/ };
+    static readonly List<Vector3> STD_ENV = new() { /*Vector3.forward, Vector3.up, Vector3.right*/ };
+
+    public List<Vector3> randomEnv;
+    public List<List<AST>> programs;
+
+    public ProgramBank(int var_cnt)
+    {
+        randomEnv = (from _ in Enumerable.Range(1, var_cnt)
+                    select UnityEngine.Random.insideUnitSphere).ToList();
+
+        programs = new List<List<AST>>
+        {
+            randomEnv.ConvertAll(v => new AST(v))
+        };
+    }
+
+    public void growTo(int size)
+    {
+        foreach (int currentSize in Enumerable.Range(programs.Count, size))
+        {
+            List<(int complexity, Func<AST, AST> constructor)> unaryOps = new()
+            {
+                (1, ast => new AST(Op.Mag, new() { ast }))
+            };
+
+            Type floatTy = typeof(float);
+            Type vecTy = typeof(Vector3);
+            List<(int complexity, Type t1, Type t2, Func<AST, AST, AST> constructor)> binaryOps = new() {
+                (1, vecTy, vecTy, (a, b) => new AST(Op.Add, new() { a, b })),
+                (1, vecTy, vecTy, (a, b) => new AST(Op.Sub, new() { a, b })),
+                (1, vecTy, vecTy, (a, b) => new AST(Op.Sub, new() { b, a })),
+                (1, vecTy, vecTy, (a, b) => new AST(Op.Dot, new() { a, b })),
+                (2, vecTy, vecTy, (a, b) => new AST(Op.Cro, new() { a, b })),
+                (3, vecTy, vecTy, (a, b) => new AST(Op.Rot, new() { a, b, new(STD_ANGLES[0]) })),
+                (3, vecTy, vecTy, (a, b) => new AST(Op.Rot, new() { b, a, new(STD_ANGLES[0]) })),
+                (1, vecTy, floatTy, (a, b) => new AST(Op.ScM, new() { a, b })),
+                (1, vecTy, floatTy, (a, b) => new AST(Op.ScD, new() { a, b })),
+                (1, floatTy, floatTy, (a, b) => new AST(Op.FlM, new() { a, b })),
+                (1, floatTy, floatTy, (a, b) => new AST(Op.FlD, new() { a, b })),
+                (1, floatTy, floatTy, (a, b) => new AST(Op.FlA, new() { a, b })),
+                (1, floatTy, floatTy, (a, b) => new AST(Op.FlS, new() { a, b }))
+            };
+
+
+            var newUnaryASTs = from op in unaryOps
+                              from ast in programs[currentSize - op.complexity]
+                              select op.constructor(ast);
+
+            var newBinaryASTs = from op in binaryOps
+                                from lsize in Enumerable.Range(1, currentSize - op.complexity)
+                                from rsize in new List<int> { currentSize - lsize - op.complexity }
+                                from l in programs[lsize - 1]
+                                from r in programs[rsize - 1]
+                                select op.constructor(l, r);
+
+            programs.Add(newUnaryASTs.Concat(newBinaryASTs).ToList());
+        }
+    }
+
+    public List<AST> findASTs(List<object> targets, List<object> userEnv, int maxComplexity)
+    {
+        while (programs.Count <= maxComplexity)
+        {
+            growTo(programs.Count + 1);
+            // find good programs
+            // return matching 
+        }
+
+        return new List<AST>();
     }
 }
 
