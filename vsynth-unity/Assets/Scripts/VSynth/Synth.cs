@@ -47,6 +47,7 @@ public class ProgramBank
 
     public List<Vector3> randomEnv;
     public List<List<AST>> programs;
+    public Dictionary<object, AST> seen = new(new LSC());
 
     public ProgramBank(int var_cnt)
     {
@@ -98,20 +99,34 @@ public class ProgramBank
                                 from r in programs[rsize - 1]
                                 select op.constructor(l, r);
 
-            programs.Add(newUnaryASTs.Concat(newBinaryASTs).ToList());
+            var newASTs = newUnaryASTs.Concat(newBinaryASTs).Where(a => seen.TryAdd(a.Val, a)).ToList();
+            programs.Add(newASTs);
         }
     }
 
-    public List<AST> findASTs(List<object> targets, List<object> userEnv, int maxComplexity)
+    private float goalDiff(object goal, AST ast, Dictionary<object, object> m) => (goal, ast.TransposedEval(m)) switch
     {
-        while (programs.Count <= maxComplexity)
+        (Vector3 v1, Vector3 v2) => (v1 - v2).magnitude,
+        (float f1, float f2) => Math.Abs(f1 - f2),
+        _ => float.MaxValue
+    };
+
+    public List<AST> findASTs(object goal, float threshold, int n, List<object> oldEnv, List<object> userEnv, int maxComplexity)
+    {
+        var userEnvMap = oldEnv.Zip(userEnv, (a, b) => (a, b)).ToDictionary(v => v.a, v => v.b);
+
+        List<AST> result = new();
+
+        while (programs.Count <= maxComplexity && result.Count < n)
         {
             growTo(programs.Count + 1);
-            // find good programs
-            // return matching 
+            var matches = from ast in programs[programs.Count]
+                          where goalDiff(goal, ast, userEnvMap) < threshold
+                          select ast;
+            result.AddRange(matches);
         }
 
-        return new List<AST>();
+        return result;
     }
 }
 

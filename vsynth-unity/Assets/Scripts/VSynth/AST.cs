@@ -12,6 +12,15 @@ public abstract class ASTCore {
 
     public ASTCore(object v) => val = v;
 
+    // if val is null, eval and return, otherwise return val
+    public object Val
+    {
+        get
+        {
+            val ??= Eval();
+            return val;
+        }
+    }
     public ASTCore(Op o, List<AST> a) {
         op = o;
         args = a;
@@ -20,27 +29,43 @@ public abstract class ASTCore {
 
     public object Eval() => op switch {
         Op.None => val,
-        Op.Add => Add((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Sub => Sub((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Cro => Cro((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Rot => Rot((Vector3)args[0].val, (Vector3)args[1].val, (float)args[2].val),
-        Op.ScM => ScM((Vector3)args[0].val, (float)  args[1].val),
-        Op.ScD => ScD((Vector3)args[0].val, (float)  args[1].val),
-        Op.Dst => Dst((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Dot => Dot((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Mag => Mag((Vector3)args[0].val),
-        Op.FlM => FlM((float)  args[0].val, (float)  args[1].val),
-        Op.FlD => FlD((float)  args[0].val, (float)  args[1].val),
-        Op.FlA => FlA((float)  args[0].val, (float)  args[1].val),
-        Op.FlS => FlS((float)  args[0].val, (float)  args[1].val),
+        Op.Add => Add((Vector3)args[0].Val, (Vector3)args[1].Val),
+        Op.Sub => Sub((Vector3)args[0].Val, (Vector3)args[1].Val),
+        Op.Cro => Cro((Vector3)args[0].Val, (Vector3)args[1].Val),
+        Op.Rot => Rot((Vector3)args[0].Val, (Vector3)args[1].Val, (float)args[2].Val),
+        Op.ScM => ScM((Vector3)args[0].Val, (float)  args[1].Val),
+        Op.ScD => ScD((Vector3)args[0].Val, (float)  args[1].Val),
+        Op.Dst => Dst((Vector3)args[0].Val, (Vector3)args[1].Val),
+        Op.Dot => Dot((Vector3)args[0].Val, (Vector3)args[1].Val),
+        Op.Mag => Mag((Vector3)args[0].Val),
+        Op.FlM => FlM((float)  args[0].Val, (float)  args[1].Val),
+        Op.FlD => FlD((float)  args[0].Val, (float)  args[1].Val),
+        Op.FlA => FlA((float)  args[0].Val, (float)  args[1].Val),
+        Op.FlS => FlS((float)  args[0].Val, (float)  args[1].Val),
         _ => null
     };
 
-    public object TransposedEval(Dictionary<object, object> env_map) => (
-        val = op switch {
-            Op.None => env_map.ContainsKey(val) ? env_map[val] : val,
-            _ => Eval()
-        }
+    public object TransposedEval(Dictionary<object, object> env_map) => op switch
+    {
+        Op.None => env_map.ContainsKey(val) ? env_map[val] : val,
+        Op.Add => Add((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map)),
+        Op.Sub => Sub((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map)),
+        Op.Cro => Cro((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map)),
+        Op.Rot => Rot((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map), (float)args[2].TransposedEval(env_map)),
+        Op.ScM => ScM((Vector3)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        Op.ScD => ScD((Vector3)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        Op.Dst => Dst((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map)),
+        Op.Dot => Dot((Vector3)args[0].TransposedEval(env_map), (Vector3)args[1].TransposedEval(env_map)),
+        Op.Mag => Mag((Vector3)args[0].TransposedEval(env_map)),
+        Op.FlM => FlM((float)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        Op.FlD => FlD((float)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        Op.FlA => FlA((float)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        Op.FlS => FlS((float)args[0].TransposedEval(env_map), (float)args[1].TransposedEval(env_map)),
+        _ => null
+    };
+
+    public object TransposedEvalImmut(Dictionary<object, object> env_map) => (
+        null
     );
 
     public override string ToString() => op switch {
@@ -48,7 +73,6 @@ public abstract class ASTCore {
         _ => op + "(" + args.Select(a => a.ToString()).Aggregate((a, b) => a + ", " + b) + ")"
 	};
 }
-
 public class AST : ASTCore {
     readonly public int complexity = 0;
 
