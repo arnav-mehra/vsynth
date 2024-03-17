@@ -9,6 +9,7 @@ public abstract class ASTCore {
     protected Op op = Op.None;
     protected List<AST> args = null;
     public object val = null;
+    public object error = null;
 
     public ASTCore(object v) => val = v;
 
@@ -25,6 +26,7 @@ public abstract class ASTCore {
         op = o;
         args = a;
         val = Eval();
+        error = o == Op.None ? null : 0.0;
     }
 
     public object Eval() => op switch {
@@ -64,9 +66,73 @@ public abstract class ASTCore {
         _ => null
     };
 
-    public object TransposedEvalImmut(Dictionary<object, object> env_map) => (
-        null
-    );
+
+    // we dont rly need a derivative class, delete it if u want but it's not terrible
+    // at first I thoguht it was a good idea because we could diff wrt vectors and floats
+    // and FF was float wrt vector, FV was vector wrt vector, and VV was vector wrt vector
+    // but we only diff wrt floats so the only types for derivatives are float and vector
+    // but having the static methods in the derivative class is nice and I think it reduces
+    // casting
+    public abstract class Derivative
+    {
+        // float derivatives 
+        public class FF : Derivative
+        {
+            public float v;
+            public FF(float v) => this.v = v;
+
+            public static FF Mag(ASTCore v, ASTCore wrt)
+            {
+                FV dv = (FV)v.D(wrt);
+                Vector3 dvec = dv.v;
+                // d/dv sqrt(x(v)^2 + y(v)^2 + z(v)^2) -> wolfram alpha
+                // (x(v)*x'(v) + y(v)*y'(v) + z(v)*z'(v)) / sqrt(x(v)^2 + y(v)^2 + z(v)^2)
+
+                float xp = dvec.x;
+                float yp = dvec.y;
+                float zp = dvec.z;
+                float x = v.Val.x;
+                float y = v.Val.y;
+                float z = v.Val.z;
+                return new FF((x * xp + y * yp + z * zp) / Mathf.Sqrt(x * x + y * y + z * z));
+            }
+        }
+
+        public class FV : Derivative
+        {
+            public Vector3 v;
+            public FV(Vector3 v) => this.v = v;
+            public static FV Add(ASTCore a, ASTCore b, ASTCore wrt)
+            {
+                FV d0 = (FV) a.D(wrt);
+                FV d1 = (FV) b.D(wrt);
+                return new FV(d0.v + d1.v);
+            }
+
+            public static FV ScM(ASTCore a, ASTCore b, ASTCore wrt)
+            {
+                FV d0 = (FV) a.D(wrt);
+                FF d1 = (FF) b.D(wrt);
+                return new FV(d0.v * d1.v);
+            }
+        }
+
+        // probably kill
+        public class VV : Derivative
+        {
+            public Vector3[] vs;
+        }
+    }
+
+    // assume wrt val is a float because we only diff wrt floats
+    public Derivative D(ASTCore wrt) => op switch
+    {
+        Op.None when val is float => new Derivative.FF(wrt == this ? 1.0f : 0.0f),
+        Op.Add => Derivative.FV.Add(args[0], args[1], wrt),
+        Op.ScM => Derivative.FV.ScM(args[0], args[1], wrt),
+        Op.Mag => Derivative.FF.Mag(args[0], wrt),
+        _ => null // todo everything else
+    };
 
     public override string ToString() => op switch {
         Op.None => val.ToString().Replace('(', '<').Replace(')', '>'),
