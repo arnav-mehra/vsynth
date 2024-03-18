@@ -1,63 +1,60 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using UnityEngine;
+using System.Collections.Generic;
 
-using static Assets.Scripts.Ops.Ops;
-using static Assets.Scripts.Ops.ComplexityExt;
+using static Ops;
 
 public abstract class ASTCore {
-    protected Op op = Op.None;
-    protected List<AST> args = null;
-    public object val = null;
-
-    public ASTCore(object v) => val = v;
+    public Op op;
+    protected List<AST> args;
 
     public ASTCore(Op o, List<AST> a) {
         op = o;
         args = a;
-        val = Eval();
     }
-
-    public object Eval() => op switch {
-        Op.None => val,
-        Op.Add => Add((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Sub => Sub((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Cro => Cro((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Rot => Rot((Vector3)args[0].val, (Vector3)args[1].val, (float)args[2].val),
-        Op.ScM => ScM((Vector3)args[0].val, (float)  args[1].val),
-        Op.ScD => ScD((Vector3)args[0].val, (float)  args[1].val),
-        Op.Dst => Dst((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Dot => Dot((Vector3)args[0].val, (Vector3)args[1].val),
-        Op.Mag => Mag((Vector3)args[0].val),
-        Op.FlM => FlM((float)  args[0].val, (float)  args[1].val),
-        Op.FlD => FlD((float)  args[0].val, (float)  args[1].val),
-        Op.FlA => FlA((float)  args[0].val, (float)  args[1].val),
-        Op.FlS => FlS((float)  args[0].val, (float)  args[1].val),
-        _ => null
-    };
-
-    public object TransposedEval(Dictionary<object, object> env_map) => (
-        val = op switch {
-            Op.None => env_map.ContainsKey(val) ? env_map[val] : val,
-            _ => Eval()
-        }
-    );
-
-    public override string ToString() => op switch {
-        Op.None => val.ToString().Replace('(', '<').Replace(')', '>'),
-        _ => op + "(" + args.Select(a => a.ToString()).Aggregate((a, b) => a + ", " + b) + ")"
-	};
 }
 
-public class AST : ASTCore {
+public class ASTValues {
+    public object[] vals = { null, null };
+
+    public object this[EnvType et] {
+        get { return vals[(int)et]; }
+        set { vals[(int)et] = value; }
+    }
+}
+
+public abstract class ASTValued : ASTCore {
+    public ASTValues vals = new();
+
+    public ASTValued(EnvType et, object v) : base(Op.None, null) => vals[et] = v;
+
+    public ASTValued(object[] ls) : base(Op.None, null) => vals.vals = ls;
+
+    public ASTValued(Op o, List<AST> a) : base(o, a) => Eval(EnvType.Rand);
+
+    public Type RetType => vals[EnvType.Rand].GetType();
+    
+    public object Eval(EnvType e) => vals[e] = op switch {
+        Op.None => vals[e],
+        Op op => op.Eval(args.ConvertAll(a => a.vals[e]))
+    };
+}
+
+public class AST : ASTValued {
     readonly public int complexity = 0;
 
-    public AST(object v) : base(v) {}
+    public AST(EnvType et, object v) : base(et, v) {}
+
+    public AST(object[] ls) : base(ls) {}
 
     public AST(Op o, List<AST> a) : base(o, a) {
-        complexity = a.Aggregate(
-            o.Complexity(),
-            (acc, p) => acc + p.complexity
-        );
+        complexity = a.Aggregate(o.Complexity(), (t, ch) => t + ch.complexity);
     }
+
+    public override string ToString() => op switch {
+        Op.None => vals[EnvType.User].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.Dst => "|" + args[0] + " - " + args[1] + "|",
+        Op.Mag => "|" + args[0] + "|",
+        Op op => "(" + args[0] + " " + op.Str() + " " + args[1] + ")",
+	};
 }
