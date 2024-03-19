@@ -9,10 +9,6 @@ static class Utils {
 		return Enumerable.Range(start, end - start + 1).ToList();
 	}
 
-	public static Action<Action<int>> ForRange(int start, int end) {
-		return Range(start, end).ForEach;
-	}
-
 	public static V TryGet<K, V>(this Dictionary<K, V> d, K key) {
 		return d.ContainsKey(key) ? d[key] : default;
 	}

@@ -25,6 +25,7 @@ public class ASTValues {
 
 public abstract class ASTValued : ASTCore {
     public ASTValues vals = new();
+    public object error = null;
 
     public ASTValued(EnvType et, object v) : base(Op.None, null) => vals[et] = v;
 
@@ -37,6 +38,15 @@ public abstract class ASTValued : ASTCore {
     public object Eval(EnvType e) => vals[e] = op switch {
         Op.None => vals[e],
         Op op => op.Eval(args.ConvertAll(a => a.vals[e]))
+    };
+
+    // assume wrt val is a float because we only diff wrt floats
+    public Derivative D(EnvType et, AST wrt) => op switch {
+        Op.None when vals[et] is float => new Derivative.FF(wrt == this ? 1.0f : 0.0f),
+        Op.Add => Derivative.FV.Add(et, args[0], args[1], wrt),
+        Op.ScM => Derivative.FV.ScM(et, args[0], args[1], wrt),
+        Op.Mag => Derivative.FF.Mag(et, args[0], wrt),
+        _ => null // todo everything else
     };
 }
 

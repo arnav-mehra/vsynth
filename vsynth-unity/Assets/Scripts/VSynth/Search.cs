@@ -13,16 +13,6 @@ public class Search {
         return (all_found, asts);
     }
 
-    // find all target asts generating up to max complexity.
-    public (bool all_found, List<List<AST>> asts) FindAllASTs(ProgramGen generator, List<object> targets, int maxComplexity) {
-        Transpose(generator);
-        while (generator.GenComplexity < maxComplexity) {
-            generator.GenNonBaseRow();
-            TransposeRow(generator, generator.GenComplexity);
-        }
-        return FindASTs(targets);
-    }
-
     // find target asts generating until maxComplexity is reached.
     public (bool all_found, List<List<AST>> asts) FindASTs(ProgramGen generator, List<object> targets, int maxComplexity) {
         Transpose(generator);
@@ -32,10 +22,17 @@ public class Search {
             var res = FindASTs(targets);
             if (res.all_found) return res;
             // grow + transpose
-            generator.GenNonBaseRow();
+            generator.GenRow();
             TransposeRow(generator, generator.GenComplexity);
         }
 
+        return FindASTs(targets);
+    }
+
+    // find all target asts generating up to max complexity.
+    public (bool all_found, List<List<AST>> asts) FindAllASTs(ProgramGen generator, List<object> targets, int maxComplexity) {
+        generator.GenRows(maxComplexity);
+        Transpose(generator);
         return FindASTs(targets);
     }
 
@@ -48,7 +45,8 @@ public class Search {
             AddAST(a);
         });
 
-        Utils.ForRange(1, generator.GenComplexity)(c => TransposeRow(generator, c));
+        Utils.Range(1, generator.GenComplexity)
+             .ForEach(c => TransposeRow(generator, c));
     }
 
     void TransposeRow(ProgramGen generator, int complexity) {

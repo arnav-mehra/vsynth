@@ -3,29 +3,40 @@ using System.Collections.Generic;
 
 public class ProgramBank : List<List<AST>> {}
 
+public class ProgramDict : Dictionary<object, AST> {
+    public ProgramDict() : base(new LSC()) {}
+}
+
 public class ProgramGen {
-    public ProgramBank prg_bank = new();
-    public Env seed; // basis env used for program uniqueness.
-    public Dictionary<object, AST> seen = new(new LSC()); // locality-sensitive hashmap used for program uniqueness
+    public ProgramBank prg_bank = new(); // program table. row idx = complexity.
+    public ProgramDict seen = new();     // hashmap for program uniqueness.
+    public Env seed = null;              // seed for program key values.
 
-    public int GenComplexity { get => prg_bank.Count - 1; }
+    public int GenComplexity => prg_bank.Count - 1;
 
-    public ProgramGen(Env e) {
-        seed = e;
-        var genASTs = seed.vars.ConvertAll(v => new AST(seed.type, v));
-        AddRow(genASTs);
+    public ProgramGen(Env e) => seed = e;
+
+    public void GenRow() {
+        List<AST> genASTs = GenComplexity switch {
+            -1 => GenBaseRow(),
+            _  => GenNonBaseRow()
+        };
+        var newASTs = genASTs.FindAll(
+            a => seen.TryAdd(a.vals[seed.type], a)
+        );
+        prg_bank.Add(newASTs);
     }
 
     public void GenRows(int complexity) {
-        Utils.ForRange(GenComplexity + 1, complexity)(_ => GenNonBaseRow());
+        Utils.Range(GenComplexity + 1, complexity)
+             .ForEach(_ => GenRow());
     }
 
-    public void GenBaseRow() {
-        var genASTs = seed.vars.ConvertAll(v => new AST(seed.type, v));
-        AddRow(genASTs);
-    }
+    List<AST> GenBaseRow() => (
+        seed.vars.ConvertAll(v => new AST(seed.type, v))
+    );
 
-    public void GenNonBaseRow() {
+    List<AST> GenNonBaseRow() {
         int targetComplexity = GenComplexity + 1;
 
         var genUnaryASTs = from ctor in ASTCtors.UNARY_CTORS
@@ -42,8 +53,7 @@ public class ProgramGen {
                                 where r.RetType == ctor.t2
                             select ctor.fn(l, r);
 
-        var genASTs = genUnaryASTs.Concat(genBinaryASTs).ToList();
-        AddRow(genASTs);
+        return genUnaryASTs.Concat(genBinaryASTs).ToList();
     }
 
     public List<AST> GetAll() => (
@@ -51,9 +61,4 @@ public class ProgramGen {
          from ast in row
          select ast).ToList()
     );
-
-    void AddRow(List<AST> genASTs) {
-        var newASTs = genASTs.FindAll(a => seen.TryAdd(a.vals[seed.type], a));
-        prg_bank.Add(newASTs);
-    }
 }

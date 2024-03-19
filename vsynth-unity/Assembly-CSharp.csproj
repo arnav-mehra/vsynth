@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\VSynth\AST.cs" />
     <Compile Include="Assets\Scripts\VSynth\LSC.cs" />
     <Compile Include="Assets\Scripts\VSynth\Env.cs" />
+    <Compile Include="Assets\Scripts\VSynth\Diff.cs" />
     <Compile Include="Assets\Scripts\VSynth\ASTCtors.cs" />
     <Compile Include="Assets\Scripts\VSynth\Ops.cs" />
     <Compile Include="Assets\Scripts\VSynth\Gen.cs" />
