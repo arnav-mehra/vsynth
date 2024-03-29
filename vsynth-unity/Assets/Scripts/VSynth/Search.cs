@@ -1,39 +1,45 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
+
+public class ResultBuffer : List<(float err, AST a)> {
+    public int size;
+
+    public ResultBuffer(int s) : base() { size = s; }
+
+    public void Add(float err, AST a) {
+        Add((err, a));
+
+        for (int i = size - 1; i >= 1; i--) {
+            if (this[i].err >= this[i - 1].err) break;
+
+            var temp = this[i];
+            this[i] = this[i - 1];
+            this[i - 1] = temp;
+        }
+
+        if (Count > size) RemoveAt(Count - 1);
+    }
+}
 
 public class Search {
     public Env env;
-    public Dictionary<object, List<AST>> seen = new(new LSC());
+    public List<object> targets;
+    public List<ResultBuffer> results;
+    public int max_results;
+    public int max_complexity;
 
-    public Search(Env e) => env = e;
-
-    // find target asts using what has been seen so far.
-    public (bool all_found, List<List<AST>> asts) FindASTs(List<object> targets) {
-        List<List<AST>> asts = targets.ConvertAll(seen.TryGet);
-        bool all_found = asts.TrueForAll(a => a != null);
-        return (all_found, asts);
-    }
-
-    // find target asts generating until maxComplexity is reached.
-    public (bool all_found, List<List<AST>> asts) FindASTs(ProgramGen generator, List<object> targets, int maxComplexity) {
-        Transpose(generator);
-
-        while (generator.GenComplexity < maxComplexity) {
-            // check for solution
-            var res = FindASTs(targets);
-            if (res.all_found) return res;
-            // grow + transpose
-            generator.GenRow();
-            TransposeRow(generator, generator.GenComplexity);
-        }
-
-        return FindASTs(targets);
+    public Search(Env e, List<object> t, int max_r = 20, int max_c = 5) {
+        env = e;
+        targets = t;
+        results = t.ConvertAll(_ => new ResultBuffer(max_r));
+        max_results = max_r;
+        max_complexity = max_c;
     }
 
     // find all target asts generating up to max complexity.
-    public (bool all_found, List<List<AST>> asts) FindAllASTs(ProgramGen generator, List<object> targets, int maxComplexity) {
-        generator.GenRows(maxComplexity);
+    public void FindAllASTs(ProgramGen generator) {
+        generator.GenRows(max_complexity);
         Transpose(generator);
-        return FindASTs(targets);
     }
 
     // fill in env search using generator program bank.
@@ -58,7 +64,17 @@ public class Search {
 
     void AddAST(AST a) {
         var key = a.vals[env.type];
-        if (seen.ContainsKey(key)) seen[key].Add(a);
-        else seen.Add(key, new() { a });
+
+        for (int i = 0; i < targets.Count; i++) {
+            var target = targets[i];
+            var buff = results[i];
+
+            float err = (key, target) switch {
+                (Vector3 v1, Vector3 v2) => Vector3.SqrMagnitude(v1 - v2),
+                (float   f1, float   f2) => (f1 - f2) * (f1 - f2),
+                _ => float.PositiveInfinity
+            };
+            buff.Add(err, a);
+        }
     }
 }

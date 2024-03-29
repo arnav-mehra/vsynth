@@ -3,7 +3,13 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - left_finger_tip
+  - right_finger_tip
+  - complexity-slider
+  - num-results-slider
+  - generate-button
+  - clear-button
   layers:
   - Default
   - TransparentFX
