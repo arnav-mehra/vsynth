@@ -16,20 +16,17 @@ public class Test {
 
         var res = search.results;
         string s = "";
-        /*targets.Zip(res.asts, (target, asts) => (target, asts)).ToList().ForEach(p => {
-            var asts_str = (
-                p.asts == null
-                    ? "None."
-                    : p.asts.ConvertAll(ast => ast.complexity + ": " + Utils.StringifyAST(search, ast))
-                            .Aggregate((acc, ast) => acc + ",\n\t" + ast)
-            );
+        targets.Zip(res, (target, results) => (target, results)).ToList().ForEach(p => {
+            var asts_str = p.results
+                .ConvertAll(r => r.a.complexity + ": " + Utils.StringifyAST(search, r.a))
+                .Aggregate((acc, ast) => acc + ",\n\t" + ast);
             s += "\nTarget: " + p.target
                 + "\nASTs Found:\n\t" + asts_str
                 + "\n";
         });
         s += "\nElapsed seconds: " + t
-            + "\nPerformance: " + (res.asts.Count / t) + " ASTs/s"
-            + "\n";*/
+            + "\nPerformance: " + (res.Aggregate(0, (acc, r) => acc + r.Count) / t) + " ASTs/s"
+            + "\n";
 
         Debug.Log(s);
     }
