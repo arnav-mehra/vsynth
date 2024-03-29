@@ -8,14 +8,15 @@ public class Test {
         Envs.InitUser(user_env);
 
         ProgramGen generator = new(Envs.Rand);
-        Search search = new(Envs.User);
+        Search search = new(Envs.User, targets, 1, complexity);
 
         Utils.Timer.Start();
-        var res = search.FindAllASTs(generator, targets, complexity);
+        search.FindAllASTs(generator);
         float t = Utils.Timer.End() / 1000.0f;
 
+        var res = search.results;
         string s = "";
-        targets.Zip(res.asts, (target, asts) => (target, asts)).ToList().ForEach(p => {
+        /*targets.Zip(res.asts, (target, asts) => (target, asts)).ToList().ForEach(p => {
             var asts_str = (
                 p.asts == null
                     ? "None."
@@ -28,7 +29,7 @@ public class Test {
         });
         s += "\nElapsed seconds: " + t
             + "\nPerformance: " + (res.asts.Count / t) + " ASTs/s"
-            + "\n";
+            + "\n";*/
 
         Debug.Log(s);
     }
