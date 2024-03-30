@@ -18,8 +18,6 @@ public static class ASTCtors {
         (Op.Sub, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Sub, new() { b, a })),
         (Op.Cro, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Cro, new() { a, b })),
         (Op.Cro, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Cro, new() { b, a })),
-        (Op.Rot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Rot, new() { a, b, STD_ASTS[0] })),
-        (Op.Rot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Rot, new() { b, a, STD_ASTS[0] })),
         (Op.Dot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Dot, new() { a, b })),
         (Op.ScM, VEC_TYPE, FLT_TYPE, (a, b) => new AST(Op.ScM, new() { a, b })),
         (Op.ScD, VEC_TYPE, FLT_TYPE, (a, b) => new AST(Op.ScD, new() { a, b })),
