@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class GeoObject {
+    public const float THICKNESS = 0.005f;
+
     public GameObject go;
 
     public Transform t => go.transform;
@@ -15,7 +18,7 @@ public class GeoObject {
 
     public GeoObject(PrimitiveType pt) {
         go = GameObject.CreatePrimitive(pt);
-        r.material = new(Shader.Find("Unlit/Texture"));
+        t.localScale = new(THICKNESS, THICKNESS, THICKNESS);
     }
 }
 
@@ -59,17 +62,28 @@ public class DrawnVector {
 
     public void SetPointPos(int i, Vector3 p) {
         points[i].t.position = p;
+        FixSegment();
+    }
+
+    void FixSegment() {
         var pos = (points[0].t.position + points[1].t.position) / 2.0f;
-        var rot = Quaternion.FromToRotation(points[0].t.position, points[1].t.position);
-        var height = Vector3.Distance(points[0].t.position, points[1].t.position);
-        var scale = new Vector3(0.05f, 0.05f, height);
-        segment.t.SetPositionAndRotation(pos, rot);
+        var dir = points[1].t.position - points[0].t.position;
+        var scale = new Vector3(GeoObject.THICKNESS, dir.magnitude / 2.0f, GeoObject.THICKNESS);
+        segment.t.position = pos;
+        segment.t.up = dir.normalized;
         segment.t.localScale = scale;
     }
 
     public void Destroy() {
         segment.go.SetActive(false);
         points.ForEach(p => p.go.SetActive(false));
+    }
+}
+
+public static class DebugText {
+    public static void Set(string s) {
+        GameObject.FindGameObjectWithTag("debug-text")
+                  .GetComponent<TextMeshProUGUI>().text = s;
     }
 }
 
@@ -84,26 +98,31 @@ public static class VecManager {
     }
 
     public static void StartVector() {
+        DebugText.Set("Starting vector");
         preview_vec.SetPointPos(0, Inputs.Hands.right_tip_pos);
         preview_vec.SetPointPos(1, Inputs.Hands.right_tip_pos);
         preview_vec.shown = true;
     }
 
     public static void EndVector() {
+        DebugText.Set("Ending vector");
         vecs.Add(preview_vec);
         preview_vec = new();
     }
 
     public static void CancelVector() {
+        DebugText.Set("Canceled vector");
         preview_vec.shown = false;
     }
 
     public static void ClearVectors() {
+        DebugText.Set("Clearing vectors");
         vecs.ForEach(v => v.Destroy());
         vecs.Clear();
     }
 
     public static void ToggleIsInput() {
+        DebugText.Set("Toggled vector io type");
         preview_vec.ToggleIsInput();
     }
 

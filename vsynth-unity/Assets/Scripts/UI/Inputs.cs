@@ -5,19 +5,20 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 
 public static class Inputs {
-    public static List<(OVRInput.RawButton key, bool wasDown, Action onUp, Action onDown)> events = new();
+    public static List<(OVRInput.RawButton key, bool wasDown, Action onDown, Action onUp)> events = new();
 
     public static void InitKeys(List<(OVRInput.RawButton key, Action onDown, Action onUp)> es) {
         events = es.ConvertAll(e => (e.key, false, e.onDown, e.onUp));
     }
 
     public static void OnFrame() {
-        events.ForEach(e => {
-            bool isDown = OVRInput.Get(e.key);
-            if (!e.wasDown && isDown && e.onDown != null) e.onDown();
-            if (e.wasDown && !isDown && e.onUp != null) e.onUp();
-            e.wasDown = isDown;
-        });
+        for (int i = 0; i < events.Count; i++) {
+            var (key, wasDown, onDown, onUp) = events[i];
+            bool isDown = OVRInput.Get(key);
+            if (!wasDown &&  isDown && onDown != null) onDown();
+            if ( wasDown && !isDown && onUp   != null) onUp();
+            events[i] = (key, isDown, onDown, onUp);
+        }
     }
 
     public static void InitButtons(List<(string tag, UnityAction onClick)> es) {

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
 
 public class VSynthManager {
     public static ProgramGen generator = null;
@@ -6,14 +8,23 @@ public class VSynthManager {
     public static int max_results = 1;
 
     public static void OnComplexityChange(float c) {
-        max_complexity = (int)c;
+        var v = (int)c;
+        max_complexity = v;
+        GameObject.FindGameObjectWithTag("complexity-slider-text")
+                  .GetComponent<TextMeshProUGUI>().text = v.ToString();
     }
 
     public static void OnNumResultsChange(float r) {
-        max_results = (int)r;
+        var v = (int)r;
+        max_results = v;
+        GameObject.FindGameObjectWithTag("num-results-slider-text")
+                  .GetComponent<TextMeshProUGUI>().text = v.ToString();
     }
 
     public static void OnGenerate() {
+        DebugText.Set("Generating programs");
+        return;
+
         List<object> inputs = VecManager.GetVectors(true);
         List<object> outputs = VecManager.GetVectors(false);
 

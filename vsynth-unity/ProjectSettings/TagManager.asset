@@ -10,6 +10,9 @@ TagManager:
   - num-results-slider
   - generate-button
   - clear-button
+  - debug-text
+  - num-results-slider-text
+  - complexity-slider-text
   layers:
   - Default
   - TransparentFX
