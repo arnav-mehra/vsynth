@@ -26,7 +26,8 @@ public class ProgramGen {
             _  => GenNonBaseRow()
         };
         var newASTs = genASTs.FindAll(
-            a => seen.TryAdd(a.vals[seed.type], a)
+            a => a.IsValid(seed.type)
+                 && seen.TryAdd(a.vals[seed.type], a)
         );
         prg_bank.Add(newASTs);
     }

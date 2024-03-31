@@ -1,34 +1,52 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Test {
+    public static void GD(List<object> user_env, Vector3 target) {
+        Envs.InitRand(user_env.Count);
+        Envs.InitUser(user_env);
+
+        AST i1 = new(new object[] { Envs.Rand.vars[0], user_env[0] });
+        AST i2 = new(new object[] { Envs.Rand.vars[1], user_env[1] });
+        AST t1 = new(Ops.Op.Dot, new() { i1, i2 });
+        AST t2 = new(Ops.Op.Mag, new() { i1 });
+        AST t3 = new(Ops.Op.FlD, new() { t1, t2 });
+        AST ast = new(Ops.Op.ScD, new() { i2, t3 });
+        ast.ReEval(EnvType.User);
+
+        // Necessary learning rate for various compositions.
+        // 0.1: add, sub, cro, mag + scm
+        // 0.01: dot + scm, dot + scd, dot + mag + fla/s + scm
+        // 0.001: dot + mag + flm/d + scm
+
+        Derivative.GradientDescent(EnvType.User, ast, target, new() { i1, i2 });
+    }
+
 	public static void Find(List<object> targets, List<object> user_env, int complexity) {
         Envs.InitRand(user_env.Count);
         Envs.InitUser(user_env);
 
         ProgramGen generator = new(Envs.Rand);
-        Search search = new(Envs.User, targets, 1, complexity);
+        Search search = new(Envs.User, targets, 20, complexity);
 
         Utils.Timer.Start();
         search.FindAllASTs(generator);
+        search.SortResults(generator);
         float t = Utils.Timer.End() / 1000.0f;
 
-        var res = search.results;
-        string s = "";
-        targets.Zip(res, (target, results) => (target, results)).ToList().ForEach(p => {
-            var asts_str = p.results
-                .ConvertAll(r => r.ast.complexity + ": " + Utils.StringifyAST(search, r.ast))
-                .Aggregate((acc, ast) => acc + ",\n\t" + ast);
-            s += "\nTarget: " + p.target
-                + "\nASTs Found:\n\t" + asts_str
-                + "\n";
-        });
-        s += "\nElapsed seconds: " + t
-            + "\nPerformance: " + (res.Aggregate(0, (acc, r) => acc + r.Count) / t) + " ASTs/s"
-            + "\n";
-
-        Debug.Log(s);
+        Debug.Log(
+            targets.Zip(search.results, (target, results) => (target, results)).ToList()
+                   .Aggregate("", (acc, p) =>
+                acc + "\nTarget: " + p.target
+                    + "\nASTs Found:" + p.results.ToString(search)
+                    + "\nErr Inversions: " + p.results.CountInversions()
+            )
+            + "\nElapsed seconds: " + t
+            + "\nPerformance: " + generator.seen.Count + " ASTs/s"
+            + "\n"
+        );
     }
 
     public static int Gen(int complexity) {

@@ -52,6 +52,12 @@ public abstract class ASTValued : ASTCore {
         Op.None when vals[et] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
         Op op => op.Diff(et, args, wrt, coord)
     };
+
+    public bool IsValid(EnvType et) => vals[et] switch {
+        Vector3 v => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.y),
+        float f => float.IsFinite(f),
+        _ => false
+    };
 }
 
 public class AST : ASTValued {

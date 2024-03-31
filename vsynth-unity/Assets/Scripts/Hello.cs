@@ -16,14 +16,22 @@ public class Hello : MonoBehaviour {
         /*Test.Gen(7);*/
 
         List<object> user_env = new() {
-            new Vector3(1, 0, 3),
-            new Vector3(-1, 4, 2)
+            Random.insideUnitSphere,
+            Random.insideUnitSphere
         };
         List<object> targets = new() {
-            new Vector3(0.5f, 0, 1.5f)
+            Random.insideUnitSphere
 		};
 
         Test.Find(targets, user_env, 6);
+
+        /*List<object> user_env = new() {
+            new Vector3(1, 0, 3),
+            new Vector3(1, 1, 2)
+        };
+        var targets = new Vector3(3, 1, 4);
+
+        Test.GD(user_env, targets);*/
 
         /*List<(int, int)> res = new();
         for (int i = 1; i <= 15; i++) {

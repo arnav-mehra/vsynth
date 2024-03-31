@@ -1,16 +1,22 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public class ResultBuffer : List<(float err, AST ast)> {
+public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
     public int size;
 
     public ResultBuffer(int s) : base() { size = s; }
 
-    public void Add(float err, AST ast) {
-        Add((err, ast));
+    const float C_DIFF_MIN_RATIO = 0.95f;
 
-        for (int i = size - 1; i >= 1; i--) {
-            if (this[i].err >= this[i - 1].err) break;
+    public void Add(float err, AST ast) {
+        Add((err, float.NaN, ast));
+        
+        for (int i = Count - 1; i >= 1; i--) {
+            // avoid over-replacement of lower complexity programs
+            bool c_diff = this[i - 1].ast.complexity < this[i].ast.complexity;
+            float min_ratio = c_diff ? C_DIFF_MIN_RATIO : 1.0f;
+            if (this[i].out_err >= min_ratio * this[i - 1].out_err) break;
 
             var temp = this[i];
             this[i] = this[i - 1];
@@ -20,54 +26,13 @@ public class ResultBuffer : List<(float err, AST ast)> {
         if (Count > size) RemoveAt(Count - 1);
     }
 
-    const float LEARNING_RATE = 0.01f;
-    const int MAX_ITERS = 50;
-
-    public void DiffSort(Vector3 target, EnvType et, ProgramBank pb) {
-        ForEach(p => {
-            var errs = pb.var_asts.ConvertAll(_ => Vector3.zero);
-            var vals = pb.var_asts.ConvertAll(a => (Vector3)a.vals[et]);
-
-            Utils.Range(0, vals.Count - 1).ForEach(i => {
-                var w = vals[i];
-                var err_w = errs[i];
-                var w_ast = pb.var_asts[i];
-
-                // C = err_out . err_out + sum(err_vi . err_vi)
-                //   = |out - f(v1 + err_v1, v2 + err_v2, ...)|^2 + sum_i(|err_vi|^2)
-                // C(err_wx) = |out - f(wx + err_wx)|^2 + err_wx^2 + sum_rem
-                // C(err_wy) = |out - f(wy + err_wy)|^2 + err_wy^2 + sum_rem
-                // C(err_wz) = |out - f(wz + err_wz)|^2 + err_wz^2 + sum_rem
-
-                // dC/derr_wx = (|out - f(wx + err_wx)|^2)' + (err_wx^2)'
-                //            = 2 (out - f(wx + err_wx))' . (out - f(wx + err_wx)) + 2 err_wx
-                //            = 2 (-f'(wx + err_wx)) . (out - f(wx + err_wx)) + 2 err_wx
-                //            = 2 (err_wx - f'(wx + err_wx) . (out - f(wx + err_wx)))
-                // dC/derr_wy = 2 (err_wy - f'(wy + err_wy) . (out - f(wy + err_wy)))
-                // dC/derr_wz = 2 (err_wz - f'(wz + err_wz) . (out - f(wz + err_wz)))
-
-                for (int iter = 1; iter <= MAX_ITERS; iter++) {
-                    var f = (Vector3) p.ast.vals[et];
-                    var fp_x = ((Derivative.FV) p.ast.Diff(EnvType.User, w_ast, 0)).v;
-                    var fp_y = ((Derivative.FV) p.ast.Diff(EnvType.User, w_ast, 1)).v;
-                    var fp_z = ((Derivative.FV) p.ast.Diff(EnvType.User, w_ast, 2)).v;
-                    var delta = target - f;
-
-                    var dC_derr_w = new Vector3(
-                        2.0f * (err_w.x - Vector3.Dot(fp_x, delta)),
-                        2.0f * (err_w.y - Vector3.Dot(fp_y, delta)),
-                        2.0f * (err_w.z - Vector3.Dot(fp_z, delta))
-                    );
-
-                    // gradient descent
-                    err_w -= LEARNING_RATE * dC_derr_w;
-
-                    // update env and reeval ast
-                    w_ast.vals[et] = w + err_w;
-                    p.ast.ReEval(et);
-                }
-            });
-        });
+    public void DiffSort(EnvType et, Vector3 target, ProgramBank pb) {
+        for (int i = 0; i < Count; i++) {
+            var (out_err, h_err, ast) = this[i];
+            var new_h_err = float.IsNaN(h_err) ? Derivative.GradientDescent(et, ast, target, pb.var_asts) : h_err;
+            this[i] = (out_err, new_h_err, ast);
+        }
+        Sort((p1, p2) => p1.h_err.CompareTo(p2.h_err));
     }
 }
 
@@ -89,6 +54,8 @@ public class Search {
     // find all target asts generating up to max complexity.
     public void FindAllASTs(ProgramGen generator) {
         generator.GenRows(max_complexity);
+        Debug.Log("Generated complexity " + generator.GenComplexity);
+        Debug.Log("Generated programs " + generator.seen.Count);
         Transpose(generator);
     }
 
@@ -96,7 +63,7 @@ public class Search {
     void Transpose(ProgramGen generator) {
         var env_map = generator.seed.CreateMapping(env);
 
-        generator.prg_bank[0].ForEach(a => {
+        generator.prg_bank.var_asts.ForEach(a => {
             a.vals[env.type] = env_map[a.vals[generator.seed.type]];
             AddAST(a);
         });
@@ -113,6 +80,8 @@ public class Search {
     }
 
     void AddAST(AST a) {
+        if (!a.IsValid(env.type)) return;
+
         var key = a.vals[env.type];
 
         for (int i = 0; i < targets.Count; i++) {
@@ -121,10 +90,17 @@ public class Search {
 
             float err = (key, target) switch {
                 (Vector3 v1, Vector3 v2) => Vector3.SqrMagnitude(v1 - v2),
-                (float   f1, float   f2) => (f1 - f2) * (f1 - f2),
+                (float f1, float f2) => (f1 - f2) * (f1 - f2),
                 _ => float.PositiveInfinity
             };
+            if (!float.IsFinite(err)) continue;
+
             buff.Add(err, a);
         }
+    }
+
+    public void SortResults(ProgramGen generator) {
+        results.Zip(targets, (r, t) => (r, t)).ToList()
+               .ForEach(p => p.r.DiffSort(env.type, (Vector3) p.t, generator.prg_bank));
     }
 }

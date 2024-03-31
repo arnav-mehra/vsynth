@@ -48,7 +48,7 @@ public static class DiffExt {
     readonly static Func<EnvType, List<AST>, AST, int, Derivative>[] DIFF_FNS = {
         null, // None,
         Derivative.FV.Add, Derivative.FV.Sub, Derivative.FV.Cro, null, Derivative.FV.ScM, Derivative.FV.ScD, // Add, Sub, Cro, Rot, ScM, ScD,
-        Derivative.FF.Dst, Derivative.FF.Dot, Derivative.FF.Mag, Derivative.FF.FlM, Derivative.FF.FlD, Derivative.FF.FlA, Derivative.FF.FlS // Dst, Dot, Mag, FlM, FlD, FlA, FlS
+        null, Derivative.FF.Dot, Derivative.FF.Mag, Derivative.FF.FlM, Derivative.FF.FlD, Derivative.FF.FlA, Derivative.FF.FlS // Dst, Dot, Mag, FlM, FlD, FlA, FlS
     };
 
     public static Derivative Diff(this Ops.Op op, EnvType et, List<AST> args, AST wrt, int coord) => DIFF_FNS[(int)op](et, args, wrt, coord);
