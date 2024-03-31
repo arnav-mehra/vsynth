@@ -29,7 +29,7 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
     public void DiffSort(EnvType et, Vector3 target, ProgramBank pb) {
         for (int i = 0; i < Count; i++) {
             var (out_err, h_err, ast) = this[i];
-            var new_h_err = float.IsNaN(h_err) ? Derivative.GradientDescent(et, ast, target, pb.var_asts) : h_err;
+            var new_h_err = float.IsNaN(h_err) ? GradientDescent.Run(et, ast, target, pb.var_asts) : h_err;
             this[i] = (out_err, new_h_err, ast);
         }
         Sort((p1, p2) => p1.h_err.CompareTo(p2.h_err));

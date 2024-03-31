@@ -23,7 +23,7 @@ public class Hello : MonoBehaviour {
             Random.insideUnitSphere
 		};
 
-        Test.Find(targets, user_env, 6);
+        Test.Find(targets, user_env, 8);
 
         /*List<object> user_env = new() {
             new Vector3(1, 0, 3),

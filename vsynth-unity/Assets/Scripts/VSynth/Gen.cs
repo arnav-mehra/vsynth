@@ -45,7 +45,8 @@ public class ProgramGen {
         int targetComplexity = GenComplexity + 1;
 
         var genUnaryASTs = from ctor in ASTCtors.UNARY_CTORS
-                           from ast in prg_bank[targetComplexity - ctor.op.Complexity()]
+                           from complexity in Utils.Range(0, targetComplexity - ctor.op.Complexity())
+                           from ast in prg_bank[complexity]
                                where ast.RetType == ctor.t
                            select ctor.fn(ast);
 

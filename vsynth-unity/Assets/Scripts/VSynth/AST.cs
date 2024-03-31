@@ -73,8 +73,11 @@ public class AST : ASTValued {
 
     public override string ToString() => op switch {
         Op.None => vals[EnvType.User].ToString().Replace('(', '<').Replace(')', '>'),
-        Op.Dst => "|" + args[0] + " - " + args[1] + "|",
         Op.Mag => "|" + args[0] + "|",
+        Op.FlI => "(1 / " + args[0] + ")",
+        Op.FlN => "(-" + args[0] + ")",
+        Op.Neg => "(-" + args[0] + ")",
+        Op.Dst => "|" + args[0] + " - " + args[1] + "|",
         Op op => "(" + args[0] + " " + op.Str() + " " + args[1] + ")",
 	};
 }

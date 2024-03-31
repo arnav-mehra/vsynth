@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,7 +20,7 @@ public class Test {
         // 0.01: dot + scm, dot + scd, dot + mag + fla/s + scm
         // 0.001: dot + mag + flm/d + scm
 
-        Derivative.GradientDescent(EnvType.User, ast, target, new() { i1, i2 });
+        GradientDescent.Run(EnvType.User, ast, target, new() { i1, i2 });
     }
 
 	public static void Find(List<object> targets, List<object> user_env, int complexity) {

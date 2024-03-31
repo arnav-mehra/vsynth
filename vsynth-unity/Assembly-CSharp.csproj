@@ -73,6 +73,7 @@
     <Compile Include="Assets\Scripts\VSynth\Ops.cs" />
     <Compile Include="Assets\Scripts\VSynth\Gen.cs" />
     <Compile Include="Assets\Scripts\Utils.cs" />
+    <Compile Include="Assets\Scripts\VSynth\GD.cs" />
     <Compile Include="Assets\Scripts\Hello.cs" />
     <Compile Include="Assets\Scripts\Test.cs" />
   </ItemGroup>
