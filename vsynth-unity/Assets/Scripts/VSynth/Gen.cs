@@ -1,7 +1,11 @@
 using System.Linq;
 using System.Collections.Generic;
 
-public class ProgramBank : List<List<AST>> {}
+public class ProgramBank : List<List<AST>> {
+    public int GenComplexity => Count - 1;
+
+    public List<AST> var_asts => this[0];
+}
 
 public class ProgramDict : Dictionary<object, AST> {
     public ProgramDict() : base(new LSC()) {}
@@ -12,7 +16,7 @@ public class ProgramGen {
     public ProgramDict seen = new();     // hashmap for program uniqueness.
     public Env seed = null;              // seed for program key values.
 
-    public int GenComplexity => prg_bank.Count - 1;
+    public int GenComplexity => prg_bank.GenComplexity;
 
     public ProgramGen(Env e) => seed = e;
 

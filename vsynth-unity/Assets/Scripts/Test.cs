@@ -18,7 +18,7 @@ public class Test {
         string s = "";
         targets.Zip(res, (target, results) => (target, results)).ToList().ForEach(p => {
             var asts_str = p.results
-                .ConvertAll(r => r.a.complexity + ": " + Utils.StringifyAST(search, r.a))
+                .ConvertAll(r => r.ast.complexity + ": " + Utils.StringifyAST(search, r.ast))
                 .Aggregate((acc, ast) => acc + ",\n\t" + ast);
             s += "\nTarget: " + p.target
                 + "\nASTs Found:\n\t" + asts_str

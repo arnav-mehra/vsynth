@@ -12,14 +12,7 @@ public class Ops {
     public static object Add(List<object> args) => (Vector3)args[0] + (Vector3)args[1];
     public static object Sub(List<object> args) => (Vector3)args[0] - (Vector3)args[1];
     public static object Cro(List<object> args) => Vector3.Cross((Vector3)args[0], (Vector3)args[1]);
-    public static object Rot(List<object> args) {
-        if (args.Count != 3 || args[0] == null || args[1] == null || args[2] == null) {
-            Debug.Log("WTF" + args.Count + ":" + args[0] + ", " + args[1] + ", " + args[2]);
-        }
-
-        return
-        Quaternion.AngleAxis((float)args[2], (Vector3)args[1]) * (Vector3)args[0];
-    }
+    public static object Rot(List<object> args) => Quaternion.AngleAxis((float)args[2], (Vector3)args[1]) * (Vector3)args[0];
     public static object ScM(List<object> args) => (Vector3)args[0] * (float)args[1];
     public static object ScD(List<object> args) => (Vector3)args[0] * (1.0f / (float)args[1]);
     public static object Dst(List<object> args) => Vector3.Distance((Vector3)args[0], (Vector3)args[1]);
@@ -49,6 +42,16 @@ public static class EvalExt {
     };
 
     public static object Eval(this Ops.Op op, List<object> args) => EVAL_FNS[(int)op](args);
+}
+
+public static class DiffExt {
+    readonly static Func<EnvType, List<AST>, AST, int, Derivative>[] DIFF_FNS = {
+        null, // None,
+        Derivative.FV.Add, Derivative.FV.Sub, Derivative.FV.Cro, null, Derivative.FV.ScM, Derivative.FV.ScD, // Add, Sub, Cro, Rot, ScM, ScD,
+        Derivative.FF.Dst, Derivative.FF.Dot, Derivative.FF.Mag, Derivative.FF.FlM, Derivative.FF.FlD, Derivative.FF.FlA, Derivative.FF.FlS // Dst, Dot, Mag, FlM, FlD, FlA, FlS
+    };
+
+    public static Derivative Diff(this Ops.Op op, EnvType et, List<AST> args, AST wrt, int coord) => DIFF_FNS[(int)op](et, args, wrt, coord);
 }
 
 public static class TypeExt {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine;
 
 using static Ops;
 
@@ -25,7 +26,6 @@ public class ASTValues {
 
 public abstract class ASTValued : ASTCore {
     public ASTValues vals = new();
-    public object error = null;
 
     public ASTValued(EnvType et, object v) : base(Op.None, null) => vals[et] = v;
 
@@ -40,13 +40,17 @@ public abstract class ASTValued : ASTCore {
         Op op => op.Eval(args.ConvertAll(a => a.vals[e]))
     };
 
-    // assume wrt val is a float because we only diff wrt floats
-    public Derivative D(EnvType et, AST wrt) => op switch {
-        Op.None when vals[et] is float => new Derivative.FF(wrt == this ? 1.0f : 0.0f),
-        Op.Add => Derivative.FV.Add(et, args[0], args[1], wrt),
-        Op.ScM => Derivative.FV.ScM(et, args[0], args[1], wrt),
-        Op.Mag => Derivative.FF.Mag(et, args[0], wrt),
-        _ => null // todo everything else
+    public object ReEval(EnvType e) => vals[e] = op switch {
+        Op.None => vals[e],
+        Op op => op.Eval(args.ConvertAll(a => a.ReEval(e)))
+    };
+
+    public Derivative Diff(EnvType et, AST wrt, int coord) => op switch {
+        Op.None when vals[et] is Vector3 && wrt != this => new Derivative.FV(Vector3.zero),
+        Op.None when vals[et] is Vector3 && coord == 0  => new Derivative.FV(new(1.0f, 0.0f, 0.0f)),
+        Op.None when vals[et] is Vector3 && coord == 1  => new Derivative.FV(new(0.0f, 1.0f, 0.0f)),
+        Op.None when vals[et] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
+        Op op => op.Diff(et, args, wrt, coord)
     };
 }
 

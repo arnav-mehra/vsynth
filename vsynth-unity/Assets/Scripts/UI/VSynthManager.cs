@@ -23,9 +23,8 @@ public class VSynthManager {
 
     public static void OnGenerate() {
         DebugText.Set("Generating programs");
-        return;
 
-        List<object> inputs = VecManager.GetVectors(true);
+        /*List<object> inputs = VecManager.GetVectors(true);
         List<object> outputs = VecManager.GetVectors(false);
 
         if (generator == null || generator.seed.vars.Count != inputs.Count) {
@@ -36,6 +35,6 @@ public class VSynthManager {
         
         Envs.InitUser(inputs);
         Search search = new(Envs.User, outputs, max_results, max_complexity);
-        search.FindAllASTs(generator);
+        search.FindAllASTs(generator);*/
     }
 }
