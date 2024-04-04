@@ -13,6 +13,10 @@ TagManager:
   - debug-text
   - num-results-slider-text
   - complexity-slider-text
+  - example-result
+  - example-sphere
+  - example-cylinder
+  - result-box
   layers:
   - Default
   - TransparentFX

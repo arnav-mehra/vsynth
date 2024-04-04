@@ -1,7 +1,11 @@
 using UnityEngine;
 
 public class UI : MonoBehaviour {
+    [SerializeField] private GameObject ResultPrefab;
+
 	private void Start() {
+        VSynthManager.result_prefab = ResultPrefab;
+
 	    Inputs.InitKeys(new() {
             (key: OVRInput.RawButton.RIndexTrigger, onDown: VecManager.StartVector, onUp: VecManager.EndVector),
             (key: OVRInput.RawButton.B, onDown: VecManager.CancelVector, onUp: null),
@@ -20,6 +24,7 @@ public class UI : MonoBehaviour {
 	void Update() {
         Inputs.Hands.OnFrame();
         VecManager.OnFrame();
+        VSynthManager.OnFrame();
         Inputs.OnFrame();
     }
 }

@@ -17,7 +17,12 @@ public class GeoObject {
     }
 
     public GeoObject(PrimitiveType pt) {
-        go = GameObject.CreatePrimitive(pt);
+        var example_tag = pt switch {
+            PrimitiveType.Sphere => "example-sphere",
+            _ => "example-cylinder"
+		};
+        var example = GameObject.FindGameObjectWithTag(example_tag);
+        go = GameObject.Instantiate(example);
         t.localScale = new(THICKNESS, THICKNESS, THICKNESS);
     }
 }

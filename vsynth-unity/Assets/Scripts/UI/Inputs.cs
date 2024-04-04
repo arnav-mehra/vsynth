@@ -42,8 +42,10 @@ public static class Inputs {
         public static Vector3 right_tip_pos = Vector3.zero;
 
         public static void OnFrame() {
-            left_tip_pos = GameObject.FindGameObjectWithTag("left_finger_tip").transform.position;
-            right_tip_pos = GameObject.FindGameObjectWithTag("right_finger_tip").transform.position;
+            var lft = GameObject.FindGameObjectWithTag("left_finger_tip");
+            var rft = GameObject.FindGameObjectWithTag("right_finger_tip");
+            if (lft) left_tip_pos = lft.transform.position;
+            if (rft) right_tip_pos = rft.transform.position;
         }
     }
 }

@@ -18,8 +18,8 @@ public static class ASTCtors {
     public static readonly List<(Op op, Type t1, Type t2, Func<AST, AST, AST> fn)> BINARY_CTORS = new() {
         (Op.Add, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Add, new() { a, b })),
         (Op.Cro, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Cro, new() { a, b })),
-        (Op.Dot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Dot, new() { a, b })),
         (Op.ScM, VEC_TYPE, FLT_TYPE, (a, b) => new AST(Op.ScM, new() { a, b })),
+        (Op.Dot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Dot, new() { a, b })),
         (Op.FlM, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlM, new() { a, b })),
         (Op.FlA, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlA, new() { a, b })),
 

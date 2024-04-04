@@ -43,7 +43,7 @@ public class Search {
     public int max_results;
     public int max_complexity;
 
-    public Search(Env e, List<object> t, int max_r = 20, int max_c = 5) {
+    public Search(Env e, List<object> t, int max_r = 10, int max_c = 6) {
         env = e;
         targets = t;
         results = t.ConvertAll(_ => new ResultBuffer(max_r));
@@ -54,8 +54,6 @@ public class Search {
     // find all target asts generating up to max complexity.
     public void FindAllASTs(ProgramGen generator) {
         generator.GenRows(max_complexity);
-        Debug.Log("Generated complexity " + generator.GenComplexity);
-        Debug.Log("Generated programs " + generator.seen.Count);
         Transpose(generator);
     }
 
