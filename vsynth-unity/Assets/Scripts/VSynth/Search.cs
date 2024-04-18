@@ -54,7 +54,9 @@ public class Search {
     // find all target asts generating up to max complexity.
     public void FindAllASTs(ProgramGen generator) {
         generator.GenRows(max_complexity);
+        Debug.Log("Generated " + generator.prg_bank.Count + " rows");
         Transpose(generator);
+        Debug.Log("transposed");
     }
 
     // fill in env search using generator program bank.

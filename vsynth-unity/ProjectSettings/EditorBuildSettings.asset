@@ -5,10 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/vsynth.unity
     guid: 70e267c55b13fa149afcf9ac4c0ac418
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/pc-testing.unity
     guid: 17d9ab429cda82f44aa75b918f3273bc
   m_configObjects:

@@ -35,21 +35,31 @@ public class VSynthManager {
         List<object> inputs = VecManager.GetVectors(true);
         List<object> outputs = VecManager.GetVectors(false);
         /*Debug.Log("Generating programs " + inputs.Aggregate((acc, i) => acc + i.ToString())  + " " + outputs.Aggregate((acc, i) => acc + i.ToString()));
-        
+        */
+
         if (generator == null || generator.seed.vars.Count != inputs.Count) {
             Envs.InitRand(inputs.Count);    
             generator = new(Envs.Rand);
-        }*/
-
-        /*new Thread(() => {
+        }
+        
+        new Thread(() => {
             Thread.CurrentThread.IsBackground = true;
             Generate(inputs, outputs);
-        }).Start();*/
-        Generate(inputs, outputs);
+        }).Start();
+        
+        //Generate(inputs, outputs);
+    }
+
+    public static void Generate(List<object> user_env, List<object> targets, List<object> inputs, List<object> outputs)
+    {
+        Envs.InitRand(user_env.Count);
+        Envs.InitUser(user_env);
+
     }
 
     public static void Generate(List<object> inputs, List<object> outputs) {
-        /*List<object> user_env = new() {
+        /*
+        List<object> user_env = new() {
             UnityEngine.Random.insideUnitSphere,
             UnityEngine.Random.insideUnitSphere
         };
@@ -62,9 +72,10 @@ public class VSynthManager {
 
         generator = new(Envs.Rand);
         search = new(Envs.User, targets, 8, 3);
-        search.FindAllASTs(generator);
+        search.FindAllASTs(generator); // crashes
+        */
 
-        Debug.Log(
+        /*Debug.Log(
             targets.Zip(search.results, (target, results) => (target, results)).ToList()
                    .Aggregate("", (acc, p) =>
                 acc + "\nTarget: " + p.target
@@ -74,13 +85,16 @@ public class VSynthManager {
             + "\nPerformance: " + generator.seen.Count + " ASTs/s"
             + "\n"
         );*/
-        /*generator.GenRows(max_complexity);
-        Debug.Log("Programs generated: " + generator.seen.Count);
+        // sc generator.GenRows(max_complexity);
+        /*Debug.Log("Programs generated: " + generator.seen.Count);*/
 
+        Envs.InitRand(inputs.Count);
         Envs.InitUser(inputs);
         search = new(Envs.User, outputs, max_results, max_complexity);
-        search.FindAllASTs(generator);*/
-        //results_changed = true;
+        Debug.Log("init search");
+        search.FindAllASTs(generator);
+        Debug.Log("Found ASTS");
+        results_changed = true;
     }
 
     public static void OnFrame() {
@@ -112,7 +126,7 @@ public class VSynthManager {
                   .AddListener(is_shown => vec.shown = is_shown);
                 go.transform.SetParent(parent.transform, false);
 
-                DebugText.Set("Adding AST: " + r.ast.ToString());
+                //DebugText.Set("Adding AST: " + r.ast.ToString());
                 result_objects.Add((go, vec));
             });
         });
