@@ -21,13 +21,13 @@ static class Utils {
     );
 
 	public static string ToString(this ResultBuffer rb, Search s) {
-        var header = "\n\tout_err\th_err\tcomplexity\tast";
+        var header = "\n\tout_err\tdrawing_err\tcomplexity\tast";
         var table = rb
             .ConvertAll(r =>
                 string.Format("{0,6:##0.000}", r.out_err)
                 + "\t" + string.Format("{0,6:##0.000}", r.h_err)
-                + "\t" + r.ast.complexity
-                + "\t" + StringifyAST(s, r.ast)
+                + "\t\t" + r.ast.complexity
+                + "\t\t" + StringifyAST(s, r.ast)
             )
             .Aggregate((acc, ast) => acc + "\n\t" + ast);
         return header + "\n\t" + table;

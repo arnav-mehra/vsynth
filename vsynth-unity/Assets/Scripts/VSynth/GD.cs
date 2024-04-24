@@ -9,7 +9,7 @@ public static class GradientDescent {
     /* Run gradient descent on each input of ast to minimize io error terms.
      * 
      * Cost Function:
-     *      C = delta_out . delta_out + sum(delta_vi . delta_vi)
+     *      C = delta_out . delta_out + sum_i(delta_vi . delta_vi)
      *        = |out - f(v1 + delta_v1, v2 + delta_v2, ...)|^2 + sum_i(|delta_vi|^2)
      *      C(delta_wx) = |out - f(wx + delta_wx)|^2 + delta_wx^2 + sum_rem
      *      C(delta_wy) = |out - f(wy + delta_wy)|^2 + delta_wy^2 + sum_rem

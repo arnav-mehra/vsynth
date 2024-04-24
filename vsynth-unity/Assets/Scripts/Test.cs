@@ -43,7 +43,8 @@ public class Test {
                     + "\nErr Inversions: " + p.results.CountInversions()
             )
             + "\nElapsed seconds: " + t
-            + "\nPerformance: " + generator.seen.Count + " ASTs/s"
+            + "\nASTs Generated: " + generator.seen.Count
+            + "\nPerformance: " + generator.seen.Count / t + " ASTs/s"
             + "\n"
         );
     }

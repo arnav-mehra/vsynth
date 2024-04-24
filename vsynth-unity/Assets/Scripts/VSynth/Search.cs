@@ -7,23 +7,24 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
 
     public ResultBuffer(int s) : base() { size = s; }
 
-    const float C_DIFF_MIN_RATIO = 0.95f;
+    const int C = 2;
+    const float OCCAM_RATIO = 1.2f;
 
     public void Add(float err, AST ast) {
         Add((err, float.NaN, ast));
         
         for (int i = Count - 1; i >= 1; i--) {
             // avoid over-replacement of lower complexity programs
-            bool c_diff = this[i - 1].ast.complexity < this[i].ast.complexity;
-            float min_ratio = c_diff ? C_DIFF_MIN_RATIO : 1.0f;
-            if (this[i].out_err >= min_ratio * this[i - 1].out_err) break;
+            float adj_curr_err = this[i].out_err;// * Mathf.Pow(OCCAM_RATIO, this[i].ast.complexity);
+            float adj_prev_err = this[i - 1].out_err;// * Mathf.Pow(OCCAM_RATIO, this[i - 1].ast.complexity);
+            if (adj_prev_err <= adj_curr_err) break;
 
             var temp = this[i];
             this[i] = this[i - 1];
             this[i - 1] = temp;
         }
 
-        if (Count > size) RemoveAt(Count - 1);
+        if (Count > size * C) RemoveAt(Count - 1);
     }
 
     public void DiffSort(EnvType et, Vector3 target, ProgramBank pb) {
@@ -32,7 +33,12 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
             var new_h_err = float.IsNaN(h_err) ? GradientDescent.Run(et, ast, target, pb.var_asts) : h_err;
             this[i] = (out_err, new_h_err, ast);
         }
-        Sort((p1, p2) => p1.h_err.CompareTo(p2.h_err));
+        Sort((p1, p2) => {
+            float adj_p1_err = p1.h_err;// * Mathf.Pow(OCCAM_RATIO, p1.ast.complexity);
+            float adj_p2_err = p2.h_err;// * Mathf.Pow(OCCAM_RATIO, p2.ast.complexity);
+            return adj_p1_err.CompareTo(adj_p2_err);
+        });
+        RemoveRange(size, C * size - size);
     }
 }
 
