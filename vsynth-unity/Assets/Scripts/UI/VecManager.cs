@@ -94,6 +94,7 @@ public class DrawnVector {
     public void Destroy() {
         segment.go.SetActive(false);
         points.ForEach(p => p.go.SetActive(false));
+        length_text.gameObject.SetActive(false);
     }
 }
 
@@ -136,6 +137,7 @@ public static class VecManager {
         DebugText.Set("Clearing vectors");
         vecs.ForEach(vs => vs.ForEach(v => v.Destroy()));
         vecs.Clear();
+        vecs.Add(new());
     }
 
     public static void ToggleIsInput() {
@@ -152,7 +154,5 @@ public static class VecManager {
         vecs.Select(vs => vs.Where(v => v.is_input == is_input)
                             .Select(v => (object)v.vector).ToList())
             .ToList()
-        //vecs.FindAll(v => v.is_input == is_input)
-        //    .ConvertAll(v => (object)v.vector)
     );
 }

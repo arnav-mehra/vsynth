@@ -34,25 +34,16 @@ public class VSynthManager {
     }
 
     public static void OnGenerate() {
-        List<object> inputs = new()
-        {
-            new Vector3(1, 0, 3),
-            new Vector3(-1, 4, 2)
-        };
-        List<object> outputs = new()
-        {
-            new Vector3(0.5f, 0, 1.5f)
-        };
-        //List<object> inputs = VecManager.GetVectors(true);
-        //List<object> outputs = VecManager.GetVectors(false);
+        List<List<object>> inputs = VecManager.GetVectors(true);
+        List<List<object>> outputs = VecManager.GetVectors(false);
         /*Debug.Log("Generating programs " + inputs.Aggregate((acc, i) => acc + i.ToString())  + " " + outputs.Aggregate((acc, i) => acc + i.ToString()));
         */
 
-        if (generator == null || generator.seed.vars.Count != inputs.Count) {
-            Envs.InitRand(inputs.Count);    
-            generator = new(Envs.Rand);
-        }
-        
+        Envs.envs.RemoveRange(1, Envs.envs.Count - 1);
+        Envs.InitRand(inputs[0].Count);
+        Envs.InitUserSets(inputs);
+        generator = new(Envs.Rand);
+
         new Thread(() => {
             Thread.CurrentThread.IsBackground = true;
             Generate(inputs, outputs);
@@ -61,14 +52,22 @@ public class VSynthManager {
         //Generate(inputs, outputs);
     }
 
-    public static void Generate(List<object> user_env, List<object> targets, List<object> inputs, List<object> outputs)
-    {
-        Envs.InitRand(user_env.Count);
-        Envs.InitUser(user_env);
+    public static void Generate(List<List<object>> inputs, List<List<object>> outputs) {
+       
+        var examples = Utils.Range(0, outputs.Count - 1).Select(i => {
+            return new Example((EnvType)(i + 1), outputs[i]);
+        }).ToList();
+        search = new(examples, max_results, max_complexity);
+        search.FindAllASTs(generator);
+        search.SortResults(generator);
+        Debug.Log("search: " + search.ToString() + " " + generator.prg_bank.ToString());
+        Debug.Log("Found ASTS: " + search.results.Count);
+        for (int i = 0; i < search.results.Count; i++)
+        {
+            Debug.Log("Results: " + search.results[i]);
+        }
+        results_changed = true;
 
-    }
-
-    public static void Generate(List<object> inputs, List<object> outputs) {
         /*
         List<object> user_env = new() {
             UnityEngine.Random.insideUnitSphere,
@@ -144,7 +143,7 @@ public class VSynthManager {
                 var (out_err, h_err, ast) = r;
 
                 outputStr.AppendLine("Output Error: " + out_err + " H Error: " + h_err);
-                outputStr.Append(ast.ToCode() + "\n\n");
+                outputStr.Append(Utils.CodifyAST(search, ast) + "\n\n");
 
                 var origin = Vector3.up * 0.5f;
                 /*var vec = new DrawnVector();
@@ -159,7 +158,7 @@ public class VSynthManager {
                 go.transform.SetParent(parent.transform, false);
 
                 //DebugText.Set("Adding AST: " + r.ast.ToString());
-                /*result_objects.Add((go, vec));*/
+                result_objects.Add((go, vec));
             });
         });
 

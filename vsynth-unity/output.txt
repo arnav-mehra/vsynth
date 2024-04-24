@@ -1,0 +1,30 @@
+Output Error: 2.119612E-05 H Error: 1.993037E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return (a * Vector3.Dot(a, (a + (a + a))));
+}
+
+Output Error: 6.195853E-06 H Error: 4.778425E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return ((a + (a + (a + b))) * Vector3.Dot((a + b), (b + b)));
+}
+
+Output Error: 1.814199E-05 H Error: 1.750699E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return (a * Vector3.Dot((a + b), (a + (a + b))));
+}
+
+Output Error: 7.893271E-06 H Error: 5.463698E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return ((a + (a + (a + b))) * Vector3.Dot((b + b), (b + b)));
+}
+
+Output Error: 2.336614E-05 H Error: 1.860067E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return ((a + (a + (a + b))) * Vector3.Dot(a, a));
+}
+
+Output Error: 1.993222E-05 H Error: 1.885402E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
+	return (a * Vector3.Dot((a + a), (a + (b + b))));
+}
+

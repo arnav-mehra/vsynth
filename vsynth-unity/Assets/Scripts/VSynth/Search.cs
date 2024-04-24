@@ -8,7 +8,7 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
     public ResultBuffer(int s) : base() { size = s; }
 
     const int C = 2;
-    const float OCCAM_RATIO = 2.0f;
+    const float OCCAM_RATIO = 1.8f;
 
     public void Add(float err, AST ast) {
         Add((err, float.NaN, ast));
@@ -142,10 +142,5 @@ public class Search {
             var target_idx = i;
             result.DiffSort(examples, target_idx, generator.prg_bank);
         }
-    }
-
-    public override string ToString()
-    {
-        return "Env: " + env;
     }
 }
