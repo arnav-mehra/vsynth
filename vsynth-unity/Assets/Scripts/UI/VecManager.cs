@@ -30,7 +30,7 @@ public class GeoObject {
 
 public class DrawnVector {
     public GeoObject segment = new(PrimitiveType.Cylinder);
-    public List<GeoObject> points = new() { new(PrimitiveType.Sphere), new(PrimitiveType.Sphere) };
+    public List<GeoObject> points = new() { new(PrimitiveType.Sphere), new(PrimitiveType.Sphere, 0.01f) };
     public bool is_input = true;
     public TextMeshPro length_text;
 
@@ -39,6 +39,7 @@ public class DrawnVector {
         set {
             points.ForEach(p => p.r.enabled = value);
             segment.r.enabled = value;
+            length_text.enabled = value;
         }
     }
 
@@ -79,11 +80,7 @@ public class DrawnVector {
         segment.t.up = dir.normalized;
         segment.t.localScale = scale;
 
-        points[1].t.localScale = 
-            new(GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f);
-
-        length_text.enabled = true;
-        length_text.gameObject.transform.position = points[1].t.position + dir * 0.05f;
+        length_text.gameObject.transform.position = points[1].t.position + dir.normalized * 0.05f;
         length_text.text = vector.magnitude.ToString("F2");
     }
 
