@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
-using System.Linq;
 using System.Threading;
-using System;
+using System.Linq;
 using System.Text;
+using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Windows;
+using TMPro;
 
 public class VSynthManager {
     public static GameObject result_prefab = null;
@@ -15,7 +14,7 @@ public class VSynthManager {
     public static int max_complexity = 5;
     public static int max_results = 10;
     
-    public static List<(GameObject toggler, DrawnVector vec)> result_objects = new();
+    public static List<(GameObject toggler, List<DrawnVector> vecs)> result_objects = new();
     public static Search search = null;
     public static bool results_changed = false;
 
@@ -36,8 +35,6 @@ public class VSynthManager {
     public static void OnGenerate() {
         List<List<object>> inputs = VecManager.GetVectors(true);
         List<List<object>> outputs = VecManager.GetVectors(false);
-        /*Debug.Log("Generating programs " + inputs.Aggregate((acc, i) => acc + i.ToString())  + " " + outputs.Aggregate((acc, i) => acc + i.ToString()));
-        */
 
         Envs.envs.RemoveRange(1, Envs.envs.Count - 1);
         Envs.InitRand(inputs[0].Count);
@@ -48,79 +45,18 @@ public class VSynthManager {
             Thread.CurrentThread.IsBackground = true;
             Generate(inputs, outputs);
         }).Start();
-        
-        //Generate(inputs, outputs);
     }
 
     public static void Generate(List<List<object>> inputs, List<List<object>> outputs) {
-       
         var examples = Utils.Range(0, outputs.Count - 1).Select(i => {
             return new Example((EnvType)(i + 1), outputs[i]);
         }).ToList();
+
         search = new(examples, max_results, max_complexity);
         search.FindAllASTs(generator);
         search.SortResults(generator);
-        Debug.Log("search: " + search.ToString() + " " + generator.prg_bank.ToString());
-        Debug.Log("Found ASTS: " + search.results.Count);
-        for (int i = 0; i < search.results.Count; i++)
-        {
-            Debug.Log("Results: " + search.results[i]);
-        }
+
         results_changed = true;
-
-        /*
-        List<object> user_env = new() {
-            UnityEngine.Random.insideUnitSphere,
-            UnityEngine.Random.insideUnitSphere
-        };
-        List<object> targets = new() {
-            UnityEngine.Random.insideUnitSphere
-		};
-
-        Envs.InitRand(user_env.Count);
-        Envs.InitUser(user_env);
-
-        generator = new(Envs.Rand);
-        search = new(Envs.User, targets, 8, 3);
-        search.FindAllASTs(generator); // crashes
-        */
-
-        /*Debug.Log(
-            targets.Zip(search.results, (target, results) => (target, results)).ToList()
-                   .Aggregate("", (acc, p) =>
-                acc + "\nTarget: " + p.target
-                    + "\nASTs Found:" + p.results.ToString(search)
-                    + "\nErr Inversions: " + p.results.CountInversions()
-            )
-            + "\nPerformance: " + generator.seen.Count + " ASTs/s"
-            + "\n"
-        );*/
-        // sc generator.GenRows(max_complexity);
-        /*Debug.Log("Programs generated: " + generator.seen.Count);*/
-
-        /*List<object> user_env = new() {
-            new Vector3(1, 0, 3),
-            new Vector3(-1, 4, 2)
-        };
-        List<object> targets = new() {
-            new Vector3(0.5f, 0, 1.5f)
-        };
-
-        Test.Find(targets, user_env, 8);*/
-
-
-        /*Envs.InitRand(inputs.Count);
-        Envs.InitUser(inputs);
-        search = new(Envs.User1, outputs, max_results, max_complexity);
-        Debug.Log("init search");
-        search.FindAllASTs(generator);
-        Debug.Log("search: " + search.ToString() + " " + generator.prg_bank.ToString());
-        Debug.Log("Found ASTS: " + search.results.Count);
-        for (int i = 0; i < search.results.Count; i++)
-        {
-            Debug.Log("Results: " + search.results[i]);
-        }
-        results_changed = true;*/
     }
 
     public static void OnFrame() {
@@ -138,37 +74,38 @@ public class VSynthManager {
         StringBuilder outputStr = new();
 
         search.results.ForEach(results => {
-            Debug.Log("results: " + results.Count);
             results.ForEach(r => {
                 var (out_err, h_err, ast) = r;
 
-                outputStr.AppendLine("Output Error: " + out_err + " H Error: " + h_err);
+                outputStr.AppendLine("Output Error: " + out_err + " Drawing Error: " + h_err);
                 outputStr.Append(Utils.CodifyAST(search, ast) + "\n\n");
 
                 var origin = Vector3.up * 0.5f;
-                /*var vec = new DrawnVector();
-                vec.SetPointPos(0, origin);
-                vec.SetPointPos(1, origin + (Vector3) ast.vals[EnvType.User1]);
-                vec.color = Color.green;*/
+                var vecs = search.examples.Select(ex => {
+                    var vec = new DrawnVector();
+                    vec.SetPointPos(0, origin);
+                    vec.SetPointPos(1, origin + (Vector3) ast.vals[ex.env_type]);
+                    vec.color = Color.green;
+                    return vec;
+                }).ToList();
 
                 var go = GameObject.Instantiate(result_prefab);
                 go.GetComponentInChildren<Text>().text = Utils.StringifyAST(search, ast);
-                /*go.GetComponentInChildren<Toggle>().onValueChanged
-                  .AddListener(is_shown => vec.shown = is_shown);*/
+                go.GetComponentInChildren<Toggle>().onValueChanged
+                  .AddListener(is_shown => vecs.ForEach(vec => vec.shown = is_shown));
                 go.transform.SetParent(parent.transform, false);
 
-                //DebugText.Set("Adding AST: " + r.ast.ToString());
-                result_objects.Add((go, vec));
+                result_objects.Add((go, vecs));
             });
         });
 
         File.WriteAllBytes("output.txt", Encoding.ASCII.GetBytes(outputStr.ToString()));
     }
 
-    static void ClearResults() {
+    public static void ClearResults() {
         result_objects.ForEach(o => {
             o.toggler.SetActive(false);
-            o.vec.Destroy();
+            o.vecs.ForEach(vec => vec.Destroy());
         });
         result_objects.Clear();
 	}

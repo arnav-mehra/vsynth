@@ -17,14 +17,14 @@ public class GeoObject {
         set => r.material.color = value;
     }
 
-    public GeoObject(PrimitiveType pt) {
+    public GeoObject(PrimitiveType pt, float thickness = THICKNESS) {
         var example_tag = pt switch {
             PrimitiveType.Sphere => "example-sphere",
             _ => "example-cylinder"
 		};
         var example = GameObject.FindGameObjectWithTag(example_tag);
         go = GameObject.Instantiate(example);
-        t.localScale = new(THICKNESS, THICKNESS, THICKNESS);
+        t.localScale = new(thickness, thickness, thickness);
     }
 }
 
@@ -58,17 +58,13 @@ public class DrawnVector {
         length_text = new GameObject().AddComponent<TextMeshPro>();
         length_text.gameObject.transform.localScale = new(0.01f, 0.01f, 0.01f);
         length_text.color = Color.black;
+        length_text.alignment = TextAlignmentOptions.Center;
     }
 
     public void ToggleIsInput() {
         is_input = !is_input;
         color = is_input ? Color.blue : Color.red;
     }
-
-    /*public void Highlight(GameObject go) {
-        points.ForEach(pt => pt.Highlight(go));
-        segment.Highlight(go);
-    }*/
 
     public void SetPointPos(int i, Vector3 p) {
         points[i].t.position = p;
@@ -87,7 +83,7 @@ public class DrawnVector {
             new(GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f);
 
         length_text.enabled = true;
-        length_text.gameObject.transform.position = points[1].t.position + vector.normalized * 0.05f;
+        length_text.gameObject.transform.position = points[1].t.position + dir * 0.05f;
         length_text.text = vector.magnitude.ToString("F2");
     }
 
@@ -108,8 +104,8 @@ public static class DebugText {
 public static class VecManager {
     public static List<List<DrawnVector>> vecs = new() { new() };
     public static DrawnVector preview_vec = new();
-    public static void OnFrame()
-    {
+
+    public static void OnFrame() {
         if (preview_vec.shown) {
             preview_vec.SetPointPos(1, Inputs.Hands.right_tip_pos);
         }
@@ -124,7 +120,7 @@ public static class VecManager {
 
     public static void EndVector() {
         DebugText.Set("Ending vector");
-        vecs[^1].Add(preview_vec);
+        vecs.Last().Add(preview_vec);
         preview_vec = new();
     }
 
@@ -138,6 +134,8 @@ public static class VecManager {
         vecs.ForEach(vs => vs.ForEach(v => v.Destroy()));
         vecs.Clear();
         vecs.Add(new());
+
+        VSynthManager.ClearResults();
     }
 
     public static void ToggleIsInput() {
@@ -145,8 +143,7 @@ public static class VecManager {
         preview_vec.ToggleIsInput();
     }
 
-    public static void StartExample()
-    {
+    public static void StartExample() {
         vecs.Add(new());
     }
 
