@@ -17,6 +17,7 @@ TagManager:
   - example-sphere
   - example-cylinder
   - result-box
+  - new-example-button
   layers:
   - Default
   - TransparentFX

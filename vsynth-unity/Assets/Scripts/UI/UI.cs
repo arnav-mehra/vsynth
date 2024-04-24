@@ -13,7 +13,8 @@ public class UI : MonoBehaviour {
         });
         Inputs.InitButtons(new() {
             (tag: "generate-button", onClick: VSynthManager.OnGenerate),
-            (tag: "clear-button", onClick: VecManager.ClearVectors)
+            (tag: "clear-button", onClick: VecManager.ClearVectors),
+            (tag: "new-example-button", onClick: VecManager.StartExample),
         });
         Inputs.InitSliders(new() {
             (tag: "complexity-slider", onSlide: VSynthManager.OnComplexityChange),

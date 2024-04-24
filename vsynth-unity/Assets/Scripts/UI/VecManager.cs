@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Linq;
 
 public class GeoObject {
     public const float THICKNESS = 0.005f;
@@ -31,6 +32,7 @@ public class DrawnVector {
     public GeoObject segment = new(PrimitiveType.Cylinder);
     public List<GeoObject> points = new() { new(PrimitiveType.Sphere), new(PrimitiveType.Sphere) };
     public bool is_input = true;
+    public TextMeshPro length_text;
 
     public bool shown {
         get => segment.r.enabled;
@@ -53,6 +55,9 @@ public class DrawnVector {
     public DrawnVector() {
         color = Color.blue;
         shown = false;
+        length_text = new GameObject().AddComponent<TextMeshPro>();
+        length_text.gameObject.transform.localScale = new(0.01f, 0.01f, 0.01f);
+        length_text.color = Color.black;
     }
 
     public void ToggleIsInput() {
@@ -77,6 +82,13 @@ public class DrawnVector {
         segment.t.position = pos;
         segment.t.up = dir.normalized;
         segment.t.localScale = scale;
+
+        points[1].t.localScale = 
+            new(GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f, GeoObject.THICKNESS * 2.0f);
+
+        length_text.enabled = true;
+        length_text.gameObject.transform.position = points[1].t.position + vector.normalized * 0.05f;
+        length_text.text = vector.magnitude.ToString("F2");
     }
 
     public void Destroy() {
@@ -93,10 +105,10 @@ public static class DebugText {
 }
 
 public static class VecManager {
-    public static List<DrawnVector> vecs = new();
+    public static List<List<DrawnVector>> vecs = new() { new() };
     public static DrawnVector preview_vec = new();
-
-    public static void OnFrame() {
+    public static void OnFrame()
+    {
         if (preview_vec.shown) {
             preview_vec.SetPointPos(1, Inputs.Hands.right_tip_pos);
         }
@@ -111,7 +123,7 @@ public static class VecManager {
 
     public static void EndVector() {
         DebugText.Set("Ending vector");
-        vecs.Add(preview_vec);
+        vecs[^1].Add(preview_vec);
         preview_vec = new();
     }
 
@@ -122,7 +134,7 @@ public static class VecManager {
 
     public static void ClearVectors() {
         DebugText.Set("Clearing vectors");
-        vecs.ForEach(v => v.Destroy());
+        vecs.ForEach(vs => vs.ForEach(v => v.Destroy()));
         vecs.Clear();
     }
 
@@ -131,8 +143,16 @@ public static class VecManager {
         preview_vec.ToggleIsInput();
     }
 
-    public static List<object> GetVectors(bool is_input) => (
-        vecs.FindAll(v => v.is_input == is_input)
-            .ConvertAll(v => (object)v.vector)
+    public static void StartExample()
+    {
+        vecs.Add(new());
+    }
+
+    public static List<List<object>> GetVectors(bool is_input) => (
+        vecs.Select(vs => vs.Where(v => v.is_input == is_input)
+                            .Select(v => (object)v.vector).ToList())
+            .ToList()
+        //vecs.FindAll(v => v.is_input == is_input)
+        //    .ConvertAll(v => (object)v.vector)
     );
 }

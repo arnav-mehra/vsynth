@@ -10,8 +10,8 @@ public class VSynthManager {
     public static GameObject result_prefab = null;
 
     public static ProgramGen generator = null;
-    public static int max_complexity = 1;
-    public static int max_results = 1;
+    public static int max_complexity = 5;
+    public static int max_results = 10;
     
     public static List<(GameObject toggler, DrawnVector vec)> result_objects = new();
     public static Search search = null;
@@ -32,8 +32,17 @@ public class VSynthManager {
     }
 
     public static void OnGenerate() {
-        List<object> inputs = VecManager.GetVectors(true);
-        List<object> outputs = VecManager.GetVectors(false);
+        List<object> inputs = new()
+        {
+            new Vector3(1, 0, 3),
+            new Vector3(-1, 4, 2)
+        };
+        List<object> outputs = new()
+        {
+            new Vector3(0.5f, 0, 1.5f)
+        };
+        //List<object> inputs = VecManager.GetVectors(true);
+        //List<object> outputs = VecManager.GetVectors(false);
         /*Debug.Log("Generating programs " + inputs.Aggregate((acc, i) => acc + i.ToString())  + " " + outputs.Aggregate((acc, i) => acc + i.ToString()));
         */
 
@@ -88,12 +97,28 @@ public class VSynthManager {
         // sc generator.GenRows(max_complexity);
         /*Debug.Log("Programs generated: " + generator.seen.Count);*/
 
+        List<object> user_env = new() {
+            new Vector3(1, 0, 3),
+            new Vector3(-1, 4, 2)
+        };
+        List<object> targets = new() {
+            new Vector3(0.5f, 0, 1.5f)
+        };
+
+        Test.Find(targets, user_env, 8);
+
+
         Envs.InitRand(inputs.Count);
         Envs.InitUser(inputs);
         search = new(Envs.User, outputs, max_results, max_complexity);
         Debug.Log("init search");
         search.FindAllASTs(generator);
-        Debug.Log("Found ASTS");
+        Debug.Log("search: " + search.ToString() + " " + generator.prg_bank.ToString());
+        Debug.Log("Found ASTS: " + search.results.Count);
+        for (int i = 0; i < search.results.Count; i++)
+        {
+            Debug.Log("Results: " + search.results[i]);
+        }
         results_changed = true;
     }
 

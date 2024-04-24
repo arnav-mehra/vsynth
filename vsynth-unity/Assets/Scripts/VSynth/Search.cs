@@ -8,7 +8,7 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
     public ResultBuffer(int s) : base() { size = s; }
 
     const int C = 2;
-    const float OCCAM_RATIO = 1.2f;
+    const float OCCAM_RATIO = 2.0f;
 
     public void Add(float err, AST ast) {
         Add((err, float.NaN, ast));
@@ -108,5 +108,10 @@ public class Search {
     public void SortResults(ProgramGen generator) {
         results.Zip(targets, (r, t) => (r, t)).ToList()
                .ForEach(p => p.r.DiffSort(env.type, (Vector3) p.t, generator.prg_bank));
+    }
+
+    public override string ToString()
+    {
+        return "Env: " + env;
     }
 }
