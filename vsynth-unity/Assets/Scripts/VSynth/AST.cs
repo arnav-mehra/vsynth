@@ -80,4 +80,20 @@ public class AST : ASTValued {
         Op.Dst => "|" + args[0] + " - " + args[1] + "|",
         Op op => "(" + args[0] + " " + op.Str() + " " + args[1] + ")",
 	};
+
+    public string ToCode() => op switch {
+        Op.None => vals[EnvType.User].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.Mag => "Vector3.Magnitude(" + args[0].ToCode() + ")",
+        Op.Dst => "Vector3.Distance("  + args[0].ToCode() + ", " + args[1].ToCode() + ")",
+        Op.Cro => "Vector3.Cross("     + args[0].ToCode() + ", " + args[1].ToCode() + ")",
+        Op.Dot => "Vector3.Dot("       + args[0].ToCode() + ", " + args[1].ToCode() + ")",
+        Op.FlI => "(1.0f / " + args[0].ToCode() + ")",
+        Op.FlN => "(-" + args[0].ToCode() + ")",
+        Op.FlM => "(" + args[0].ToCode() + " * " + args[1].ToCode() + ")",
+        Op.FlD => "(" + args[0].ToCode() + " / " + args[1].ToCode() + ")",
+        Op.Neg => "(-" + args[0].ToCode() + ")",
+        Op.ScM => "(" + args[0].ToCode() + " * " + args[1].ToCode() + ")",
+        Op.ScD => "(" + args[0].ToCode() + " / " + args[1].ToCode() + ")",
+        Op op => "(" + args[0].ToCode() + " " + op.Str() + " " + args[1].ToCode() + ")"
+	};
 }

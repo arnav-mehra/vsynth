@@ -15,8 +15,8 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
         
         for (int i = Count - 1; i >= 1; i--) {
             // avoid over-replacement of lower complexity programs
-            float adj_curr_err = this[i].out_err;// * Mathf.Pow(OCCAM_RATIO, this[i].ast.complexity);
-            float adj_prev_err = this[i - 1].out_err;// * Mathf.Pow(OCCAM_RATIO, this[i - 1].ast.complexity);
+            float adj_curr_err = this[i].out_err * Mathf.Pow(OCCAM_RATIO, this[i].ast.complexity);
+            float adj_prev_err = this[i - 1].out_err * Mathf.Pow(OCCAM_RATIO, this[i - 1].ast.complexity);
             if (adj_prev_err <= adj_curr_err) break;
 
             var temp = this[i];
@@ -34,11 +34,13 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
             this[i] = (out_err, new_h_err, ast);
         }
         Sort((p1, p2) => {
-            float adj_p1_err = p1.h_err;// * Mathf.Pow(OCCAM_RATIO, p1.ast.complexity);
-            float adj_p2_err = p2.h_err;// * Mathf.Pow(OCCAM_RATIO, p2.ast.complexity);
+            float adj_p1_err = p1.h_err * Mathf.Pow(OCCAM_RATIO, p1.ast.complexity);
+            float adj_p2_err = p2.h_err * Mathf.Pow(OCCAM_RATIO, p2.ast.complexity);
             return adj_p1_err.CompareTo(adj_p2_err);
         });
-        RemoveRange(size, C * size - size);
+        if (Count > size) {
+            RemoveRange(size, Count - size);
+        }
     }
 }
 
@@ -60,9 +62,7 @@ public class Search {
     // find all target asts generating up to max complexity.
     public void FindAllASTs(ProgramGen generator) {
         generator.GenRows(max_complexity);
-        Debug.Log("Generated " + generator.prg_bank.Count + " rows");
         Transpose(generator);
-        Debug.Log("transposed");
     }
 
     // fill in env search using generator program bank.

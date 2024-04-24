@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 
@@ -20,14 +19,28 @@ static class Utils {
         })
     );
 
+    public static string CodifyAST(Search es, AST a) {
+        string return_value = Range(0, es.env.vars.Count - 1).Aggregate(a.ToCode(), (s, i) => {
+            string v = es.env.vars[i].ToString().Replace('(', '<').Replace(')', '>');
+            return s.Replace(v, ((char)('a' + i)).ToString());
+        });
+        string args = Range(0, es.env.vars.Count - 1)
+            .Select(i => "Vector3 " + (char)('a' + i))
+            .Aggregate((a, b) => a + ", " + b);
+        return $"public static Vector3 GeneratedFunction({args})" + " {\n" +
+            "\t" + $"return {return_value};" + "\n" +
+        "}";
+    }
+
 	public static string ToString(this ResultBuffer rb, Search s) {
         var header = "\n\tout_err\tdrawing_err\tcomplexity\tast";
-        var table = rb
-            .ConvertAll(r =>
+        var table = rb.Count == 0 ? "\n"
+            : rb.ConvertAll(r =>
                 string.Format("{0,6:##0.000}", r.out_err)
                 + "\t" + string.Format("{0,6:##0.000}", r.h_err)
                 + "\t\t" + r.ast.complexity
                 + "\t\t" + StringifyAST(s, r.ast)
+                //+ "\n" + CodifyAST(s, r.ast)
             )
             .Aggregate((acc, ast) => acc + "\n\t" + ast);
         return header + "\n\t" + table;
