@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using System.Linq;
 using System.Threading;
 using System;
+using System.Text;
+using UnityEngine.Windows;
 
 public class VSynthManager {
     public static GameObject result_prefab = null;
@@ -134,10 +136,15 @@ public class VSynthManager {
 
         var parent = GameObject.FindGameObjectWithTag("result-box");
 
+        StringBuilder outputStr = new();
+
         search.results.ForEach(results => {
             Debug.Log("results: " + results.Count);
             results.ForEach(r => {
                 var (out_err, h_err, ast) = r;
+
+                outputStr.AppendLine("Output Error: " + out_err + " H Error: " + h_err);
+                outputStr.Append(ast.ToCode() + "\n\n");
 
                 var origin = Vector3.up * 0.5f;
                 /*var vec = new DrawnVector();
@@ -155,6 +162,8 @@ public class VSynthManager {
                 /*result_objects.Add((go, vec));*/
             });
         });
+
+        File.WriteAllBytes("output.txt", Encoding.ASCII.GetBytes(outputStr.ToString()));
     }
 
     static void ClearResults() {
