@@ -44,9 +44,9 @@ public static class GradientDescent {
                 var delta_out = target - eval;                              // out - f(w_z + delta_w_z)
                 var err_out = Vector3.SqrMagnitude(delta_out);              // |out - f(w_z + delta_w_z)|^2
 
-                var fp_w_x = ((Derivative.FV) ast.Diff(EnvType.User, ast_w, 0)).v;     // f'(w_x + delta_w_x)
-                var fp_w_y = ((Derivative.FV) ast.Diff(EnvType.User, ast_w, 1)).v;     // f'(w_y + delta_y_x)
-                var fp_w_z = ((Derivative.FV) ast.Diff(EnvType.User, ast_w, 2)).v;     // f'(w_z + delta_z_x)
+                var fp_w_x = ((Derivative.FV) ast.Diff(et, ast_w, 0)).v;     // f'(w_x + delta_w_x)
+                var fp_w_y = ((Derivative.FV) ast.Diff(et, ast_w, 1)).v;     // f'(w_y + delta_y_x)
+                var fp_w_z = ((Derivative.FV) ast.Diff(et, ast_w, 2)).v;     // f'(w_z + delta_z_x)
 
                 var dC_ddelta_w = new Vector3(
                     2.0f * (delta_w.x - Vector3.Dot(fp_w_x, delta_out)),    // dC / ddelta_w_x

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Test {
-    public static void GD(List<object> user_env, Vector3 target) {
+    /*public static void GD(List<object> user_env, Vector3 target) {
         Envs.InitRand(user_env.Count);
         Envs.InitUser(user_env);
 
@@ -21,14 +21,11 @@ public class Test {
         // 0.001: dot + mag + flm/d + scm
 
         GradientDescent.Run(EnvType.User, ast, target, new() { i1, i2 });
-    }
+    }*/
 
-	public static void Find(List<object> targets, List<object> user_env, int complexity) {
-        Envs.InitRand(user_env.Count);
-        Envs.InitUser(user_env);
-
+	public static void Find(List<Example> examples, int complexity) {
         ProgramGen generator = new(Envs.Rand);
-        Search search = new(Envs.User, targets, 20, complexity);
+        Search search = new(examples, 20, complexity);
 
         Utils.Timer.Start();
         search.FindAllASTs(generator);
@@ -36,11 +33,10 @@ public class Test {
         float t = Utils.Timer.End() / 1000.0f;
 
         Debug.Log(
-            targets.Zip(search.results, (target, results) => (target, results)).ToList()
-                   .Aggregate("", (acc, p) =>
-                acc + "\nTarget: " + p.target
-                    + "\nASTs Found:" + p.results.ToString(search)
-                    + "\nErr Inversions: " + p.results.CountInversions()
+            search.results.Aggregate("", (acc, r) =>
+                acc
+                + "\nASTs Found:" + r.ToString(search)
+                + "\nErr Inversions: " + r.CountInversions()
             )
             + "\nElapsed seconds: " + t
             + "\nASTs Generated: " + generator.seen.Count
@@ -59,7 +55,7 @@ public class Test {
         float t = Utils.Timer.End() / 1000.0f;
 
         var res = generator.GetAll();
-        int vec_ret_cnt = res.FindAll(a => a.vals[EnvType.User] is Vector3).Count;
+        int vec_ret_cnt = res.FindAll(a => a.vals[EnvType.User1] is Vector3).Count;
         int flt_ret_cnt = res.Count - vec_ret_cnt;
         string ls_str = generator.prg_bank.Aggregate("", (acc, ls) => acc + ", " + ls.Count.ToString());
 

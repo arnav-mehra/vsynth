@@ -12,19 +12,21 @@ static class Utils {
 		return d.ContainsKey(key) ? d[key] : default;
 	}
 
-	public static string StringifyAST(Search es, AST a) => (
-        Range(0, es.env.vars.Count - 1).Aggregate(a.ToString(), (s, i) => {
-            string v = es.env.vars[i].ToString().Replace('(', '<').Replace(')', '>');
-            return s.Replace(v, ((char)('a' + i)).ToString());
-        })
-    );
-
-    public static string CodifyAST(Search es, AST a) {
-        string return_value = Range(0, es.env.vars.Count - 1).Aggregate(a.ToCode(), (s, i) => {
-            string v = es.env.vars[i].ToString().Replace('(', '<').Replace(')', '>');
+	public static string StringifyAST(Search es, AST a) {
+        var vars = es.examples[0].env.vars;
+        return Range(0, vars.Count - 1).Aggregate(a.ToString(), (s, i) => {
+            string v = vars[i].ToString().Replace('(', '<').Replace(')', '>');
             return s.Replace(v, ((char)('a' + i)).ToString());
         });
-        string args = Range(0, es.env.vars.Count - 1)
+    }
+
+    public static string CodifyAST(Search es, AST a) {
+        var vars = es.examples[0].env.vars;
+        string return_value = Range(0, vars.Count - 1).Aggregate(a.ToCode(), (s, i) => {
+            string v = vars[i].ToString().Replace('(', '<').Replace(')', '>');
+            return s.Replace(v, ((char)('a' + i)).ToString());
+        });
+        string args = Range(0, vars.Count - 1)
             .Select(i => "Vector3 " + (char)('a' + i))
             .Aggregate((a, b) => a + ", " + b);
         return $"public static Vector3 GeneratedFunction({args})" + " {\n" +

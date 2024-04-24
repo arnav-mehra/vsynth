@@ -27,36 +27,63 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
         if (Count > size * C) RemoveAt(Count - 1);
     }
 
-    public void DiffSort(EnvType et, Vector3 target, ProgramBank pb) {
+    public void DiffSort(List<Example> exs, int target_idx, ProgramBank pb) {
         for (int i = 0; i < Count; i++) {
-            var (out_err, h_err, ast) = this[i];
-            var new_h_err = float.IsNaN(h_err) ? GradientDescent.Run(et, ast, target, pb.var_asts) : h_err;
-            this[i] = (out_err, new_h_err, ast);
+            var (out_err, _, ast) = this[i];
+            var total_h_err = 0.0f;
+
+            exs.ForEach(ex => {
+                var target = (Vector3)ex.targets[target_idx];
+                var h_err = GradientDescent.Run(ex.env.type, ast, target, pb.var_asts);
+                total_h_err += h_err;
+            });
+
+            this[i] = (out_err, total_h_err, ast);
         }
+        
         Sort((p1, p2) => {
             float adj_p1_err = p1.h_err * Mathf.Pow(OCCAM_RATIO, p1.ast.complexity);
             float adj_p2_err = p2.h_err * Mathf.Pow(OCCAM_RATIO, p2.ast.complexity);
             return adj_p1_err.CompareTo(adj_p2_err);
         });
+
         if (Count > size) {
             RemoveRange(size, Count - size);
         }
     }
 }
 
-public class Search {
-    public Env env;
+public class Example {
+    public EnvType env_type;
+    public Env env => Envs.envs[(int)env_type];
     public List<object> targets;
-    public List<ResultBuffer> results;
+    
+    public Example(EnvType et, List<object> t) {
+        env_type = et;
+        targets = t;
+    }
+}
+
+public class Search {
+    public List<Example> examples;
+    public List<ResultBuffer> results; // size = number of targets.
     public int max_results;
     public int max_complexity;
 
-    public Search(Env e, List<object> t, int max_r = 10, int max_c = 6) {
-        env = e;
-        targets = t;
-        results = t.ConvertAll(_ => new ResultBuffer(max_r));
+    public Search(List<Example> exs, int max_r = 10, int max_c = 6) {
         max_results = max_r;
         max_complexity = max_c;
+
+        if (exs.Count == 0) {
+            examples = new();
+            results = new();
+            return;
+        }
+
+        var inp_cnt = exs[0].env.vars.Count;
+        var target_cnt = exs[0].targets.Count;
+        examples = exs.FindAll(ex => ex.targets.Count == target_cnt && ex.env.vars.Count == inp_cnt).ToList();
+        results = Utils.Range(1, target_cnt).ConvertAll(_ => new ResultBuffer(max_r));
     }
 
     // find all target asts generating up to max complexity.
@@ -67,11 +94,13 @@ public class Search {
 
     // fill in env search using generator program bank.
     void Transpose(ProgramGen generator) {
-        var env_map = generator.seed.CreateMapping(env);
+        examples.ForEach(e => {
+            var env_map = generator.seed.CreateMapping(e.env);
 
-        generator.prg_bank.var_asts.ForEach(a => {
-            a.vals[env.type] = env_map[a.vals[generator.seed.type]];
-            AddAST(a);
+            generator.prg_bank.var_asts.ForEach(a => {
+                a.vals[e.env.type] = env_map[a.vals[generator.seed.type]];
+                AddAST(a);
+            });
         });
 
         Utils.Range(1, generator.GenComplexity)
@@ -80,34 +109,39 @@ public class Search {
 
     void TransposeRow(ProgramGen generator, int complexity) {
         generator.prg_bank[complexity].ForEach(a => {
-            a.Eval(env.type);
+            examples.ForEach(e => a.Eval(e.env.type));
             AddAST(a);
         });
     }
 
     void AddAST(AST a) {
-        if (!a.IsValid(env.type)) return;
-
-        var key = a.vals[env.type];
-
-        for (int i = 0; i < targets.Count; i++) {
-            var target = targets[i];
+        for (int i = 0; i < results.Count; i++) {
             var buff = results[i];
+            var total_error = 0.0f;
 
-            float err = (key, target) switch {
-                (Vector3 v1, Vector3 v2) => Vector3.SqrMagnitude(v1 - v2),
-                (float f1, float f2) => (f1 - f2) * (f1 - f2),
-                _ => float.PositiveInfinity
-            };
-            if (!float.IsFinite(err)) continue;
+            examples.ForEach(ex => {
+                var target = ex.targets[i];
+                var key = a.vals[ex.env.type];
 
-            buff.Add(err, a);
+                float err = (key, target) switch {
+                    (Vector3 v1, Vector3 v2) => Vector3.SqrMagnitude(v1 - v2),
+                    (float f1, float f2) => (f1 - f2) * (f1 - f2),
+                    _ => float.PositiveInfinity
+                };
+                err = float.IsFinite(err) ? err : float.PositiveInfinity;
+                total_error += err;
+            });
+
+            buff.Add(total_error, a);
         }
     }
 
     public void SortResults(ProgramGen generator) {
-        results.Zip(targets, (r, t) => (r, t)).ToList()
-               .ForEach(p => p.r.DiffSort(env.type, (Vector3) p.t, generator.prg_bank));
+        for (int i = 0; i < results.Count; i++) {
+            var result = results[i];
+            var target_idx = i;
+            result.DiffSort(examples, target_idx, generator.prg_bank);
+        }
     }
 
     public override string ToString()

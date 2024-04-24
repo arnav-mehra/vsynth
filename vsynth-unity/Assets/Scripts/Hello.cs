@@ -20,8 +20,24 @@ public class Hello : MonoBehaviour {
         List<object> targets = new() {
             new Vector3(0.5f, 0, 1.5f)
 		};
+        Envs.InitUser(user_env);
+        var ex = new Example(EnvType.User1, targets);
 
-        Test.Find(targets, user_env, 8);
+        List<object> user_env2 = new() {
+            new Vector3(1, 0, 3),
+            new Vector3(1, -4, -2)
+        };
+        List<object> targets2 = new() {
+            new Vector3(-0.5f, 0, -1.5f)
+		};
+        Envs.InitUser(user_env2);
+        Envs.InitRand(user_env2.Count);
+        var ex2 = new Example(EnvType.User2, targets2);
+        
+        Envs.InitRand(user_env.Count);
+
+        List<Example> exs = new() { ex, ex2 };
+        Test.Find(exs, 8);
 
         //Test.GD(user_env, targets);
 

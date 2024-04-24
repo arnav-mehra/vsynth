@@ -15,8 +15,22 @@ public abstract class ASTCore {
     }
 }
 
+/*public static class ASTValuess {
+    public static List<List<object>> cache = new();
+    
+    public static int AddAst(AST a) {
+        var vals = Utils.Range(1, Envs.envs.Count).Select(_ => null).ToList();
+        cache.Add();
+        return cache.Count - 1;
+    }
+
+    public static void SetAstVal(AST a, EnvType et) {
+        cache[a.val_idx]
+    }
+}*/
+
 public class ASTValues {
-    public object[] vals = { null, null };
+    public object[] vals = { null, null, null, null, null, null };
 
     public object this[EnvType et] {
         get { return vals[(int)et]; }
@@ -26,6 +40,7 @@ public class ASTValues {
 
 public abstract class ASTValued : ASTCore {
     public ASTValues vals = new();
+    public int val_idx;
 
     public ASTValued(EnvType et, object v) : base(Op.None, null) => vals[et] = v;
 
@@ -72,7 +87,7 @@ public class AST : ASTValued {
     }
 
     public override string ToString() => op switch {
-        Op.None => vals[EnvType.User].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.None => vals[EnvType.User1].ToString().Replace('(', '<').Replace(')', '>'),
         Op.Mag => "|" + args[0] + "|",
         Op.FlI => "(1 / " + args[0] + ")",
         Op.FlN => "(-" + args[0] + ")",
@@ -82,7 +97,7 @@ public class AST : ASTValued {
 	};
 
     public string ToCode() => op switch {
-        Op.None => vals[EnvType.User].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.None => vals[EnvType.User1].ToString().Replace('(', '<').Replace(')', '>'),
         Op.Mag => "Vector3.Magnitude(" + args[0].ToCode() + ")",
         Op.Dst => "Vector3.Distance("  + args[0].ToCode() + ", " + args[1].ToCode() + ")",
         Op.Cro => "Vector3.Cross("     + args[0].ToCode() + ", " + args[1].ToCode() + ")",

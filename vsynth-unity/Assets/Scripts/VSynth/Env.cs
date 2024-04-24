@@ -4,7 +4,12 @@ using UnityEngine;
 
 public enum EnvType {
     Rand = 0,
-    User = 1
+    User1 = 1,
+    User2 = 2,
+    User3 = 3,
+    User4 = 4,
+    User5 = 5,
+    User6 = 6
 }
 
 public class Env {
@@ -12,6 +17,10 @@ public class Env {
     public List<object> vars = new();
 
     public Env(EnvType t) => type = t;
+    public Env(EnvType t, List<object> vs) {
+        type = t;
+        vars = vs;
+    }
 
     public Dictionary<object, object> CreateMapping(Env e) => (
         vars.Zip(e.vars, (a, b) => (a, b))
@@ -20,28 +29,27 @@ public class Env {
 }
 
 public static class Envs {
-    public static Env[] envs = {
-        new(EnvType.Rand),
-        new(EnvType.User)
+    public static List<Env> envs = new() {
+        new(EnvType.Rand)
     };
 
     public static Env Rand => envs[(int)EnvType.Rand];
-    public static Env User => envs[(int)EnvType.User];
 
-    public static void InitRand(int var_cnt) {
-        /*
-        Rand.vars = (
-            from _ in Utils.Range(1, var_cnt)
-            select (object)UnityEngine.Random.insideUnitSphere
-        ).ToList();
-    */
-        Rand.vars = new List<object> {
-            new Vector3(1.12587f, 2.6542f, 3.12354f),
-            new Vector3(-1.541231f, 1.879123f, -1.12354f),
-            new Vector3(2.12354f, 1.12354f, 1.12354f),
-        };
-        Rand.vars = Rand.vars.Take(var_cnt).ToList();
+    public static void InitUserSets(List<List<object>> input_sets) {
+        envs.AddRange(
+            Utils.Range(0, input_sets.Count - 1)
+                 .Select(i => new Env((EnvType)(i + 1), input_sets[i]))
+        );
     }
 
-    public static void InitUser(List<object> u) => User.vars = u;
+    public static void InitUser(List<object> input_set) {
+        envs.Add(new Env((EnvType)envs.Count, input_set));
+    }
+
+    public static void InitRand(int var_cnt) {
+        Rand.vars = (
+            from _ in Utils.Range(1, var_cnt)
+            select (object)Random.insideUnitSphere
+        ).ToList();
+    }
 }

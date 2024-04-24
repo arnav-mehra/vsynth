@@ -97,7 +97,7 @@ public class VSynthManager {
         // sc generator.GenRows(max_complexity);
         /*Debug.Log("Programs generated: " + generator.seen.Count);*/
 
-        List<object> user_env = new() {
+        /*List<object> user_env = new() {
             new Vector3(1, 0, 3),
             new Vector3(-1, 4, 2)
         };
@@ -105,12 +105,12 @@ public class VSynthManager {
             new Vector3(0.5f, 0, 1.5f)
         };
 
-        Test.Find(targets, user_env, 8);
+        Test.Find(targets, user_env, 8);*/
 
 
-        Envs.InitRand(inputs.Count);
+        /*Envs.InitRand(inputs.Count);
         Envs.InitUser(inputs);
-        search = new(Envs.User, outputs, max_results, max_complexity);
+        search = new(Envs.User1, outputs, max_results, max_complexity);
         Debug.Log("init search");
         search.FindAllASTs(generator);
         Debug.Log("search: " + search.ToString() + " " + generator.prg_bank.ToString());
@@ -119,7 +119,7 @@ public class VSynthManager {
         {
             Debug.Log("Results: " + search.results[i]);
         }
-        results_changed = true;
+        results_changed = true;*/
     }
 
     public static void OnFrame() {
@@ -140,19 +140,19 @@ public class VSynthManager {
                 var (out_err, h_err, ast) = r;
 
                 var origin = Vector3.up * 0.5f;
-                var vec = new DrawnVector();
+                /*var vec = new DrawnVector();
                 vec.SetPointPos(0, origin);
-                vec.SetPointPos(1, origin + (Vector3) ast.vals[EnvType.User]);
-                vec.color = Color.green;
+                vec.SetPointPos(1, origin + (Vector3) ast.vals[EnvType.User1]);
+                vec.color = Color.green;*/
 
                 var go = GameObject.Instantiate(result_prefab);
                 go.GetComponentInChildren<Text>().text = Utils.StringifyAST(search, ast);
-                go.GetComponentInChildren<Toggle>().onValueChanged
-                  .AddListener(is_shown => vec.shown = is_shown);
+                /*go.GetComponentInChildren<Toggle>().onValueChanged
+                  .AddListener(is_shown => vec.shown = is_shown);*/
                 go.transform.SetParent(parent.transform, false);
 
                 //DebugText.Set("Adding AST: " + r.ast.ToString());
-                result_objects.Add((go, vec));
+                /*result_objects.Add((go, vec));*/
             });
         });
     }
