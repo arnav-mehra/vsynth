@@ -1,30 +1,70 @@
-Output Error: 2.119612E-05 H Error: 1.993037E-05
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return (a * Vector3.Dot(a, (a + (a + a))));
+Output Error: 2.7757E-05 Drawing Error: 1.810971E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (a * Vector3.Dot(a, (b * (1.0f / Vector3.Dot(a, a)))));
 }
 
-Output Error: 6.195853E-06 H Error: 4.778425E-06
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return ((a + (a + (a + b))) * Vector3.Dot((a + b), (b + b)));
+Output Error: 2.801746E-05 Drawing Error: 1.81871E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return ((a + a) * Vector3.Magnitude((a + c)));
 }
 
-Output Error: 1.814199E-05 H Error: 1.750699E-05
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return (a * Vector3.Dot((a + b), (a + (a + b))));
+Output Error: 3.619265E-05 Drawing Error: 1.993107E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (a * Vector3.Dot(b, (b * (1.0f / Vector3.Dot(a, a)))));
 }
 
-Output Error: 7.893271E-06 H Error: 5.463698E-06
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return ((a + (a + (a + b))) * Vector3.Dot((b + b), (b + b)));
+Output Error: 4.143454E-05 Drawing Error: 2.288823E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return ((a + a) * Vector3.Magnitude((c + c)));
 }
 
-Output Error: 2.336614E-05 H Error: 1.860067E-05
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return ((a + (a + (a + b))) * Vector3.Dot(a, a));
+Output Error: 4.74232E-05 Drawing Error: 2.982205E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (a + (-(a * Vector3.Magnitude(b))));
 }
 
-Output Error: 1.993222E-05 H Error: 1.885402E-05
-public static Vector3 GeneratedFunction(Vector3 a, Vector3 b) {
-	return (a * Vector3.Dot((a + a), (a + (b + b))));
+Output Error: 6.119168E-05 Drawing Error: 3.270841E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return ((a + a) * Vector3.Magnitude((b + d)));
+}
+
+Output Error: 0.0001260894 Drawing Error: 3.621E-05
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return ((a + a) * Vector3.Dot((a + a), (a + a)));
+}
+
+Output Error: 1.700166E-06 Drawing Error: 1.379468E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Dot(b, (d * (1.0f / Vector3.Dot(a, b)))));
+}
+
+Output Error: 1.710538E-06 Drawing Error: 1.38452E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Dot(d, (d * (1.0f / Vector3.Dot(b, d)))));
+}
+
+Output Error: 1.934854E-06 Drawing Error: 1.459595E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Dot(c, (d * (1.0f / Vector3.Dot(c, c)))));
+}
+
+Output Error: 4.680579E-06 Drawing Error: 1.690686E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Dot(a, (c * (1.0f / Vector3.Dot(c, d)))));
+}
+
+Output Error: 1.027074E-05 Drawing Error: 1.721483E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Dot(a, (c * (1.0f / Vector3.Dot(d, d)))));
+}
+
+Output Error: 2.480824E-06 Drawing Error: 1.821287E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return ((c + c) * Vector3.Magnitude((d + d)));
+}
+
+Output Error: 2.48337E-06 Drawing Error: 1.899431E-06
+public static Vector3 GeneratedFunction(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
+	return (c * Vector3.Magnitude((a + (c + d))));
 }
 

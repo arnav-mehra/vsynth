@@ -2,6 +2,7 @@
 using UnityEngine;
 using TMPro;
 using System.Linq;
+using OVR.OpenVR;
 
 public class GeoObject {
     public const float THICKNESS = 0.005f;
@@ -55,11 +56,11 @@ public class DrawnVector {
 
     public DrawnVector() {
         color = Color.blue;
-        shown = false;
         length_text = new GameObject().AddComponent<TextMeshPro>();
         length_text.gameObject.transform.localScale = new(0.01f, 0.01f, 0.01f);
         length_text.color = Color.black;
         length_text.alignment = TextAlignmentOptions.Center;
+        shown = false;
     }
 
     public void ToggleIsInput() {
@@ -101,6 +102,8 @@ public static class DebugText {
 public static class VecManager {
     public static List<List<DrawnVector>> vecs = new() { new() };
     public static DrawnVector preview_vec = new();
+
+    public static List<Vector3> origins => (from v in vecs select v.Find(v => !v.is_input).points[0].t.position).ToList();
 
     public static void OnFrame() {
         if (preview_vec.shown) {

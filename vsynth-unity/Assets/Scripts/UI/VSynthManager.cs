@@ -13,6 +13,7 @@ public class VSynthManager {
     public static ProgramGen generator = null;
     public static int max_complexity = 5;
     public static int max_results = 10;
+    public static bool use_output_error = false;
     
     public static List<(GameObject toggler, List<DrawnVector> vecs)> result_objects = new();
     public static Search search = null;
@@ -80,9 +81,9 @@ public class VSynthManager {
                 outputStr.AppendLine("Output Error: " + out_err + " Drawing Error: " + h_err);
                 outputStr.Append(Utils.CodifyAST(search, ast) + "\n\n");
 
-                var origin = Vector3.up * 0.5f;
                 var vecs = search.examples.Select(ex => {
                     var vec = new DrawnVector();
+                    var origin = VecManager.origins[(int)ex.env_type - 1];
                     vec.SetPointPos(0, origin);
                     vec.SetPointPos(1, origin + (Vector3) ast.vals[ex.env_type]);
                     vec.color = Color.green;

@@ -35,8 +35,8 @@ public class Ops {
 public static class ComplexityExt {
     readonly static int[] COMPLEXITIES = {
         0, // None,
-        1, 4, 1, // Add, Cro, ScM,
-        2, 3, 1, // Dot, Mag, Neg,
+        1, 2, 1, // Add, Cro, ScM,
+        1, 2, 1, // Dot, Mag, Neg,
         1, 1, 1, 1, // FlM, FlA, FlI, FlN
         1, 5, 1, 1, 1, 1 // Sub, Rot, ScD, Dst, FlD, FlS
     };

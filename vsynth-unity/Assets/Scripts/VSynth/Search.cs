@@ -8,7 +8,7 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
     public ResultBuffer(int s) : base() { size = s; }
 
     const int C = 2;
-    const float OCCAM_RATIO = 1.8f;
+    const float OCCAM_RATIO = 1.5f;
 
     public void Add(float err, AST ast) {
         Add((err, float.NaN, ast));
@@ -47,6 +47,14 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
             return adj_p1_err.CompareTo(adj_p2_err);
         });
 
+        if (Count > size) {
+            RemoveRange(size, Count - size);
+        }
+    }
+
+    public void OutputSort()
+    {
+        Sort((p1, p2) => p1.out_err.CompareTo(p2.out_err));
         if (Count > size) {
             RemoveRange(size, Count - size);
         }
@@ -140,7 +148,8 @@ public class Search {
         for (int i = 0; i < results.Count; i++) {
             var result = results[i];
             var target_idx = i;
-            result.DiffSort(examples, target_idx, generator.prg_bank);
+            if (VSynthManager.use_output_error) result.OutputSort();
+            else result.DiffSort(examples, target_idx, generator.prg_bank);
         }
     }
 }

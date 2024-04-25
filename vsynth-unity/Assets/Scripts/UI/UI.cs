@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UI : MonoBehaviour {
     [SerializeField] private GameObject ResultPrefab;
@@ -20,6 +21,9 @@ public class UI : MonoBehaviour {
             (tag: "complexity-slider", onSlide: VSynthManager.OnComplexityChange),
             (tag: "num-results-slider", onSlide: VSynthManager.OnNumResultsChange)
         });
+
+        Toggle output_error_checkbox = GameObject.FindGameObjectWithTag("use-output-error-checkbox").GetComponentInChildren<Toggle>();
+        output_error_checkbox.onValueChanged.AddListener((bool v) => VSynthManager.use_output_error = v);
 	}
 
 	void Update() {

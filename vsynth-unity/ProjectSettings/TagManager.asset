@@ -18,6 +18,7 @@ TagManager:
   - example-cylinder
   - result-box
   - new-example-button
+  - use-output-error-checkbox
   layers:
   - Default
   - TransparentFX
