@@ -62,7 +62,7 @@ public class AST {
         Ops.FlN => "(-" + args[0] + ")",
         Ops.Neg => "(-" + args[0] + ")",
         Ops.Dst => "|"  + args[0] + " - " + args[1] + "|",*/
-	};
+	  };
 
     public string ToCode() => op switch {
         NoOp => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
