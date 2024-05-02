@@ -24,31 +24,29 @@ public class Test {
     }*/
 
 	public static void Find(List<Example> examples, int complexity) {
-        ProgramGen generator = new(Envs.Rand);
-        Search search = new(examples, 20, complexity);
+        Synthesizer sz = new(examples, 20, complexity);
 
         Utils.Timer.Start();
-        search.FindAllASTs(generator);
-        search.SortResults(generator);
+        var results = sz.Run();
         float t = Utils.Timer.End() / 1000.0f;
 
         Debug.Log(
-            search.results.Aggregate("", (acc, r) =>
+            results.Aggregate("", (acc, r) =>
                 acc
-                + "\nASTs Found:" + r.ToString(search)
+                + "\nASTs Found:" + r.ToString(sz.generator)
                 + "\nErr Inversions: " + r.CountInversions()
             )
             + "\nElapsed seconds: " + t
-            + "\nASTs Generated: " + generator.seen.Count
-            + "\nPerformance: " + generator.seen.Count / t + " ASTs/s"
+            + "\nASTs Generated: " + sz.generator.seen.Count
+            + "\nPerformance: " + sz.generator.seen.Count / t + " ASTs/s"
             + "\n"
         );
     }
 
-    public static int Gen(int complexity) {
+    /*public static int Gen(int complexity) {
         Envs.InitRand(2);
 
-        ProgramGen generator = new(Envs.Rand);
+        Generator generator = new(Envs.Rand);
 
         Utils.Timer.Start();
         generator.GenRows(complexity);
@@ -73,7 +71,7 @@ public class Test {
         );
 
         return res.Count;
-    }
+    }*/
 
     public void PrintVec(Vector3 v) {
         Debug.Log("new Vector3(" + v.x + "f, " + v.y + "f, " + v.z + "f)");

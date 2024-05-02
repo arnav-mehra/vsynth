@@ -9,7 +9,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{1EF16777-6AFE-E1FF-D0DF-7D08F540E792}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -55,13 +56,15 @@
     <UnityVersion>2022.3.18f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\2022.3.18f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\2022.3.18f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\UI\VecManager.cs" />
     <Compile Include="Assets\Scripts\UI\VSynthManager.cs" />
+    <Compile Include="Assets\Scripts\VSynth\Results.cs" />
+    <Compile Include="Assets\Scripts\VSynth\Synth.cs" />
     <Compile Include="Assets\Scripts\VSynth\Search.cs" />
     <Compile Include="Assets\Scripts\VSynth\AST.cs" />
     <Compile Include="Assets\Scripts\VSynth\LSC.cs" />
@@ -69,7 +72,7 @@
     <Compile Include="Assets\Scripts\VSynth\Env.cs" />
     <Compile Include="Assets\Scripts\VSynth\Diff.cs" />
     <Compile Include="Assets\Scripts\UI\UI.cs" />
-    <Compile Include="Assets\Scripts\VSynth\ASTCtors.cs" />
+    <Compile Include="Assets\Scripts\VSynth\Ctors.cs" />
     <Compile Include="Assets\Scripts\VSynth\Ops.cs" />
     <Compile Include="Assets\Scripts\VSynth\Gen.cs" />
     <Compile Include="Assets\Scripts\VSynth\Utils.cs" />

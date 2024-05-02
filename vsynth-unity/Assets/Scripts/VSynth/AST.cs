@@ -1,103 +1,69 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-using static Ops;
-
-public abstract class ASTCore {
+public class AST {
     public Op op;
     protected List<AST> args;
+    readonly public int complexity;
+    public object[] vals;
 
-    public ASTCore(Op o, List<AST> a) {
+    public AST(Op o, List<AST> a, int env_cnt) {
         op = o;
         args = a;
-    }
-}
-
-/*public static class ASTValuess {
-    public static List<List<object>> cache = new();
-    
-    public static int AddAst(AST a) {
-        var vals = Utils.Range(1, Envs.envs.Count).Select(_ => null).ToList();
-        cache.Add();
-        return cache.Count - 1;
+        vals = new object[env_cnt];
+        complexity = a.Aggregate(o.Complexity(), (t, ch) => t + ch.complexity);
     }
 
-    public static void SetAstVal(AST a, EnvType et) {
-        cache[a.val_idx]
+    public AST(object val, int env_id, int env_cnt) {
+        op = Op.None;
+        vals[env_id] = val;
+        vals = new object[env_cnt];
+        complexity = 0;
     }
-}*/
 
-public class ASTValues {
-    public object[] vals = { null, null, null, null, null, null };
-
-    public object this[EnvType et] {
-        get { return vals[(int)et]; }
-        set { vals[(int)et] = value; }
+    public AST(List<object> _vals) {
+        op = Op.None;
+        vals = _vals.ToArray();
+        complexity = 0;
     }
-}
 
-public abstract class ASTValued : ASTCore {
-    public ASTValues vals = new();
-    public int val_idx;
-
-    public ASTValued(EnvType et, object v) : base(Op.None, null) => vals[et] = v;
-
-    public ASTValued(object[] ls) : base(Op.None, null) => vals.vals = ls;
-
-    public ASTValued(Op o, List<AST> a) : base(o, a) => Eval(EnvType.Rand);
-
-    public Type RetType => vals[EnvType.Rand].GetType();
-    
-    public object Eval(EnvType e) => vals[e] = op switch {
-        Op.None => vals[e],
-        Op op => op.Eval(args.ConvertAll(a => a.vals[e]))
+    public object Eval(int env_id) => vals[env_id] = op switch {
+        Op.None => vals[env_id],
+        Op op => op.Eval(args.ConvertAll(a => a.vals[env_id]))
     };
 
-    public object ReEval(EnvType e) => vals[e] = op switch {
-        Op.None => vals[e],
-        Op op => op.Eval(args.ConvertAll(a => a.ReEval(e)))
+    public object ReEval(int env_id) => vals[env_id] = op switch {
+        Op.None => vals[env_id],
+        Op op => op.Eval(args.ConvertAll(a => a.ReEval(env_id)))
     };
 
-    public Derivative Diff(EnvType et, AST wrt, int coord) => op switch {
-        Op.None when vals[et] is Vector3 && wrt != this => new Derivative.FV(Vector3.zero),
-        Op.None when vals[et] is Vector3 && coord == 0  => new Derivative.FV(new(1.0f, 0.0f, 0.0f)),
-        Op.None when vals[et] is Vector3 && coord == 1  => new Derivative.FV(new(0.0f, 1.0f, 0.0f)),
-        Op.None when vals[et] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
-        Op op => op.Diff(et, args, wrt, coord)
+    public Derivative Diff(int env_id, AST wrt, int coord) => op switch {
+        Op.None when vals[env_id] is Vector3 && wrt != this => new Derivative.FV(Vector3.zero),
+        Op.None when vals[env_id] is Vector3 && coord == 0  => new Derivative.FV(new(1.0f, 0.0f, 0.0f)),
+        Op.None when vals[env_id] is Vector3 && coord == 1  => new Derivative.FV(new(0.0f, 1.0f, 0.0f)),
+        Op.None when vals[env_id] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
+        Op op => op.Diff(env_id, args, wrt, coord)
     };
 
-    public bool IsValid(EnvType et) => vals[et] switch {
+    public bool IsValid(int env_id) => vals[env_id] switch {
         Vector3 v => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.y),
         float f => float.IsFinite(f),
         _ => false
     };
-}
-
-public class AST : ASTValued {
-    readonly public int complexity = 0;
-
-    public AST(EnvType et, object v) : base(et, v) {}
-
-    public AST(object[] ls) : base(ls) {}
-
-    public AST(Op o, List<AST> a) : base(o, a) {
-        complexity = a.Aggregate(o.Complexity(), (t, ch) => t + ch.complexity);
-    }
 
     public override string ToString() => op switch {
-        Op.None => vals[EnvType.User1].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.None => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
         Op.Mag => "|" + args[0] + "|",
         Op.FlI => "(1 / " + args[0] + ")",
         Op.FlN => "(-" + args[0] + ")",
         Op.Neg => "(-" + args[0] + ")",
-        Op.Dst => "|" + args[0] + " - " + args[1] + "|",
-        Op op => "(" + args[0] + " " + op.Str() + " " + args[1] + ")",
+        Op.Dst => "|"  + args[0] + " - " + args[1] + "|",
+        Op op  => "("  + args[0] + " " + op.Str() + " " + args[1] + ")",
 	};
 
     public string ToCode() => op switch {
-        Op.None => vals[EnvType.User1].ToString().Replace('(', '<').Replace(')', '>'),
+        Op.None => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
         Op.Mag => "Vector3.Magnitude(" + args[0].ToCode() + ")",
         Op.Dst => "Vector3.Distance("  + args[0].ToCode() + ", " + args[1].ToCode() + ")",
         Op.Cro => "Vector3.Cross("     + args[0].ToCode() + ", " + args[1].ToCode() + ")",

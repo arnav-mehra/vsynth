@@ -1,55 +1,67 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
-
-public enum EnvType {
-    Rand = 0,
-    User1 = 1,
-    User2 = 2,
-    User3 = 3,
-    User4 = 4,
-    User5 = 5,
-    User6 = 6
-}
 
 public class Env {
-    public EnvType type;
-    public List<object> vars = new();
+    public int id;
+    public bool is_example;
+    public List<object> inputs;
+    public List<object> outputs;
 
-    public Env(EnvType t) => type = t;
-    public Env(EnvType t, List<object> vs) {
-        type = t;
-        vars = vs;
+    public Env(int _id, bool _is_example, List<object> _inputs, List<object> _outputs) {
+        id = _id;
+        is_example = _is_example;
+        inputs = _inputs;
+        outputs = _outputs;
     }
 
-    public Dictionary<object, object> CreateMapping(Env e) => (
-        vars.Zip(e.vars, (a, b) => (a, b))
-            .ToDictionary(v => v.a, v => v.b)
+    public Dictionary<object, object> CreateVarMapping(Env e) => (
+        inputs.Zip(e.inputs, (a, b) => (a, b))
+              .ToDictionary(v => v.a, v => v.b)
     );
 }
 
-public static class Envs {
-    public static List<Env> envs = new() {
-        new(EnvType.Rand)
-    };
+public class Envs : List<Env> {
+    public int InCount => Count == 0 ? 0 : this.First().inputs.Count;
+    public int OutCount => Count == 0 ? 0 : this.First().outputs.Count;
+    
+    public Envs ExampleEnvs => (Envs)FindAll(env => env.is_example);
 
-    public static Env Rand => envs[(int)EnvType.Rand];
-
-    public static void InitUserSets(List<List<object>> input_sets) {
-        envs.AddRange(
-            Utils.Range(0, input_sets.Count - 1)
-                 .Select(i => new Env((EnvType)(i + 1), input_sets[i]))
-        );
+    public Envs(List<Example> exs) : base() {
+        exs.ForEach(ex => AddExample(ex));
     }
 
-    public static void InitUser(List<object> input_set) {
-        envs.Add(new Env((EnvType)envs.Count, input_set));
+    public int Add(bool is_example, List<object> inputs, List<object> outputs) {
+        int id = Count;
+        Add(new(id, is_example, inputs, outputs));
+        return id;
     }
 
-    public static void InitRand(int var_cnt) {
-        Rand.vars = (
-            from _ in Utils.Range(1, var_cnt)
-            select (object)Random.insideUnitSphere
-        ).ToList();
+    public Option<int> AddExample(Example ex) => (
+        IsValid(ex.inputs, ex.outputs) switch {
+            true => Option<int>.Some(Add(true, ex.inputs, ex.outputs)),
+            false => Option<int>.None
+        }
+    );
+
+    public int AddRand() => Add(
+        false,
+        Utils.Range(1, InCount)
+             .Select(_ => (object)UnityEngine.Random.insideUnitSphere)
+             .ToList(),
+        new()
+    );
+
+    public bool IsValid(List<object> inputs, List<object> outputs) => (
+        Count == 0 || (inputs.Count == InCount && (outputs.Count == OutCount))
+    );
+}
+
+public class Example {
+    public List<object> inputs;
+    public List<object> outputs;
+
+    public Example(List<object> ins, List<object> outs) {
+        inputs = ins;
+        outputs = outs;
     }
 }

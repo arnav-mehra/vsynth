@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -11,55 +12,61 @@ public class ProgramDict : Dictionary<object, AST> {
     public ProgramDict() : base(new LSC()) {}
 }
 
-public class ProgramGen {
+public class Generator {
+    public Env seed;                     // seed for program key values.
     public ProgramBank prg_bank = new(); // program table. row idx = complexity.
     public ProgramDict seen = new();     // hashmap for program uniqueness.
-    public Env seed = null;              // seed for program key values.
+    public List<(Op op, Type t, Func<AST, AST> fn)> unary_ctors;
+    public List<(Op op, Type t1, Type t2, Func<AST, AST, AST> fn)> binary_ctors;
 
     public int GenComplexity => prg_bank.GenComplexity;
 
-    public ProgramGen(Env e) => seed = e;
+    public Generator(Envs envs) {
+        seed = envs[envs.AddRand()];
+        unary_ctors = Ctors.MakeUnaryCtors(envs.Count);
+        binary_ctors = Ctors.MakeBinaryCtors(envs.Count);
+    }
 
-    public void GenRow() {
-        List<AST> genASTs = GenComplexity switch {
-            -1 => GenBaseRow(),
+    public void GenRow(Envs envs) {
+        var genASTs = GenComplexity switch {
+            -1 => GenBaseRow(envs),
             _  => GenNonBaseRow()
         };
-        var newASTs = genASTs.FindAll(
-            a => a.IsValid(seed.type)
-                 && seen.TryAdd(a.vals[seed.type], a)
+        var newASTs = genASTs.Where(
+            a => a.IsValid(seed.id)
+                 && seen.TryAdd(a.vals[seed.id], a)
         );
-        prg_bank.Add(newASTs);
+        prg_bank.Add(newASTs.ToList());
     }
 
-    public void GenRows(int complexity) {
+    public void GenRows(Envs envs, int complexity) {
         Utils.Range(GenComplexity + 1, complexity)
-             .ForEach(_ => GenRow());
+             .ForEach(_ => GenRow(envs));
     }
 
-    List<AST> GenBaseRow() => (
-        seed.vars.ConvertAll(v => new AST(seed.type, v))
+    IEnumerable<AST> GenBaseRow(Envs envs) => (
+        seed.inputs.ConvertAll(val => new AST(val, seed.id, envs.Count))
     );
 
-    List<AST> GenNonBaseRow() {
+    IEnumerable<AST> GenNonBaseRow() {
         int targetComplexity = GenComplexity + 1;
 
-        var genUnaryASTs = from ctor in ASTCtors.UNARY_CTORS
+        var genUnaryASTs = from ctor in unary_ctors
                            from complexity in Utils.Range(0, targetComplexity - ctor.op.Complexity())
                            from ast in prg_bank[complexity]
-                               where ast.RetType == ctor.t
+                               where ast.op.RetType() == ctor.t
                            select ctor.fn(ast);
 
-        var genBinaryASTs = from ctor in ASTCtors.BINARY_CTORS
+        var genBinaryASTs = from ctor in binary_ctors
                             from l_complexity in Utils.Range(0, targetComplexity - ctor.op.Complexity())
                             let r_complexity = targetComplexity - l_complexity - ctor.op.Complexity()
                             from l in prg_bank[l_complexity]
-                                where l.RetType == ctor.t1
+                                where l.op.RetType() == ctor.t1
                             from r in prg_bank[r_complexity]
-                                where r.RetType == ctor.t2
+                                where r.op.RetType() == ctor.t2
                             select ctor.fn(l, r);
 
-        return genUnaryASTs.Concat(genBinaryASTs).ToList();
+        return genUnaryASTs.Concat(genBinaryASTs);
     }
 
     public List<AST> GetAll() => (

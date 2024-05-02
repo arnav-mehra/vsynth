@@ -3,40 +3,27 @@ using UnityEngine;
 
 public class Hello : MonoBehaviour {
     void Start() {
-        /*Test.Gen(7);*/
+        var ex1 = new Example(
+            new() {
+                new Vector3(1, 0, 3),
+                new Vector3(-1, 4, 2)
+            },
+            new() {
+                new Vector3(0.5f, 0, 1.5f)
+            }
+        );
 
-        /*List<object> user_env = new() {
-            Random.insideUnitSphere,
-            Random.insideUnitSphere
-        };
-        List<object> targets = new() {
-            Random.insideUnitSphere
-		};*/
+        var ex2 = new Example(
+            new() {
+                new Vector3(1, 0, 3),
+                new Vector3(1, -4, -2)
+            },
+            new() {
+                new Vector3(-0.5f, 0, -1.5f)
+            }
+        );
 
-        List<object> user_env = new() {
-            new Vector3(1, 0, 3),
-            new Vector3(-1, 4, 2)
-        };
-        List<object> targets = new() {
-            new Vector3(0.5f, 0, 1.5f)
-		};
-        Envs.InitUser(user_env);
-        var ex = new Example(EnvType.User1, targets);
-
-        List<object> user_env2 = new() {
-            new Vector3(1, 0, 3),
-            new Vector3(1, -4, -2)
-        };
-        List<object> targets2 = new() {
-            new Vector3(-0.5f, 0, -1.5f)
-		};
-        Envs.InitUser(user_env2);
-        Envs.InitRand(user_env2.Count);
-        var ex2 = new Example(EnvType.User2, targets2);
-        
-        Envs.InitRand(user_env.Count);
-
-        List<Example> exs = new() { ex, ex2 };
+        List<Example> exs = new() { ex1, ex2 };
         Test.Find(exs, 8);
 
         //Test.GD(user_env, targets);

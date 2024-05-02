@@ -2,15 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Ops {
-    public enum Op {
-        None, // None,
-        Add, Cro, ScM, // Add, Cro, ScM,
-        Dot, Mag, Neg, // Dot, Mag, Neg,
-        FlM, FlA, FlI, FlN, // FlM, FlA, FlI, FlN
-        Sub, Rot, ScD, Dst, FlD, FlS // Sub, Rot, ScD, Dst, FlD, FlS
-    }
-    
+public enum Op {
+    None, // None,
+    Add, Cro, ScM, // Add, Cro, ScM,
+    Dot, Mag, Neg, // Dot, Mag, Neg,
+    FlM, FlA, FlI, FlN, // FlM, FlA, FlI, FlN
+    Sub, Rot, ScD, Dst, FlD, FlS // Sub, Rot, ScD, Dst, FlD, FlS
+}
+
+public static class ComplexityExt {
+    readonly static int[] COMPLEXITIES = {
+        0, // None,
+        1, 2, 1, // Add, Cro, ScM,
+        1, 2, 1, // Dot, Mag, Neg,
+        1, 1, 1, 1, // FlM, FlA, FlI, FlN
+        1, 5, 1, 1, 1, 1 // Sub, Rot, ScD, Dst, FlD, FlS
+    };
+
+    public static int Complexity(this Op op) => COMPLEXITIES[(int)op];
+}
+
+public static class EvalExt {
     // core ops
     public static object Add(List<object> args) => (Vector3)args[0] + (Vector3)args[1];
     public static object Cro(List<object> args) => Vector3.Cross((Vector3)args[0], (Vector3)args[1]);
@@ -30,34 +42,20 @@ public class Ops {
     public static object FlD(List<object> args) => (float)args[0] / (float)args[1];
     public static object ScD(List<object> args) => (Vector3)args[0] * (1.0f / (float)args[1]);
     public static object FlS(List<object> args) => (float)args[0] - (float)args[1];
-}
 
-public static class ComplexityExt {
-    readonly static int[] COMPLEXITIES = {
-        0, // None,
-        1, 2, 1, // Add, Cro, ScM,
-        1, 2, 1, // Dot, Mag, Neg,
-        1, 1, 1, 1, // FlM, FlA, FlI, FlN
-        1, 5, 1, 1, 1, 1 // Sub, Rot, ScD, Dst, FlD, FlS
-    };
-
-    public static int Complexity(this Ops.Op op) => COMPLEXITIES[(int)op];
-}
-
-public static class EvalExt {
     readonly static Func<List<object>, object>[] EVAL_FNS = {
         null, // None,
-        Ops.Add, Ops.Cro, Ops.ScM, // Add, Cro, ScM,
-        Ops.Dot, Ops.Mag, Ops.Neg, // Dot, Mag, Neg,
-        Ops.FlM, Ops.FlA, Ops.FlI, Ops.FlN, // FlM, FlA, FlI, FlN
-        Ops.Sub, Ops.Rot, Ops.ScD, Ops.Dst, Ops.FlD, Ops.FlS // Sub, Rot, ScD, Dst, FlD, FlS
+        Add, Cro, ScM, // Add, Cro, ScM,
+        Dot, Mag, Neg, // Dot, Mag, Neg,
+        FlM, FlA, FlI, FlN, // FlM, FlA, FlI, FlN
+        Sub, Rot, ScD, Dst, FlD, FlS // Sub, Rot, ScD, Dst, FlD, FlS
     };
 
-    public static object Eval(this Ops.Op op, List<object> args) => EVAL_FNS[(int)op](args);
+    public static object Eval(this Op op, List<object> args) => EVAL_FNS[(int)op](args);
 }
 
 public static class DiffExt {
-    readonly static Func<EnvType, List<AST>, AST, int, Derivative>[] DIFF_FNS = {
+    readonly static Func<int, List<AST>, AST, int, Derivative>[] DIFF_FNS = {
         null, // None,
         Derivative.FV.Add, Derivative.FV.Cro, Derivative.FV.ScM, // Add, Cro, ScM,
         Derivative.FF.Dot, Derivative.FF.Mag, Derivative.FV.Neg, // Dot, Mag, Neg,
@@ -65,7 +63,7 @@ public static class DiffExt {
         Derivative.FV.Sub, null, Derivative.FV.ScD, null, Derivative.FF.FlD, Derivative.FF.FlS // Sub, Rot, ScD, Dst, FlD, FlS
     };
 
-    public static Derivative Diff(this Ops.Op op, EnvType et, List<AST> args, AST wrt, int coord) => DIFF_FNS[(int)op](et, args, wrt, coord);
+    public static Derivative Diff(this Op op, int et, List<AST> args, AST wrt, int coord) => DIFF_FNS[(int)op](et, args, wrt, coord);
 }
 
 public static class TypeExt {
@@ -73,14 +71,14 @@ public static class TypeExt {
     static readonly public Type VEC_TYPE = typeof(Vector3);
 
     readonly static Type[] RET_TYPES = {
-        null, // None,
+        VEC_TYPE, // None (variable),
         VEC_TYPE, VEC_TYPE, VEC_TYPE, // Add, Cro, ScM,
         FLT_TYPE, FLT_TYPE, VEC_TYPE, // Dot, Mag, Neg,
         FLT_TYPE, FLT_TYPE, FLT_TYPE, FLT_TYPE, // FlM, FlA, FlI, FlN
         VEC_TYPE, VEC_TYPE, VEC_TYPE, FLT_TYPE, FLT_TYPE, FLT_TYPE // Sub, Rot, ScD, Dst, FlD, FlS
     };
 
-    public static Type RetType(this Ops.Op op) => RET_TYPES[(int)op];
+    public static Type RetType(this Op op) => RET_TYPES[(int)op];
 }
 
 public static class StrExt {
@@ -92,5 +90,5 @@ public static class StrExt {
         "-", "r", "÷", null, "÷", "-" // Sub, Rot, ScD, Dst, FlD, FlS
     };
 
-    public static string Str(this Ops.Op op) => STRS[(int)op];
+    public static string Str(this Op op) => STRS[(int)op];
 }

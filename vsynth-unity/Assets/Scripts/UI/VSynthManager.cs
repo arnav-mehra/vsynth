@@ -10,13 +10,13 @@ using TMPro;
 public class VSynthManager {
     public static GameObject result_prefab = null;
 
-    public static ProgramGen generator = null;
+    public static Synthesizer synthesizer = null;
     public static int max_complexity = 5;
     public static int max_results = 10;
     public static bool use_output_error = false;
     
     public static List<(GameObject toggler, List<DrawnVector> vecs)> result_objects = new();
-    public static Search search = null;
+    public static Searcher search = null;
     public static bool results_changed = false;
 
     public static void OnComplexityChange(float c) {
@@ -37,26 +37,20 @@ public class VSynthManager {
         List<List<object>> inputs = VecManager.GetVectors(true);
         List<List<object>> outputs = VecManager.GetVectors(false);
 
-        Envs.envs.RemoveRange(1, Envs.envs.Count - 1);
-        Envs.InitRand(inputs[0].Count);
-        Envs.InitUserSets(inputs);
-        generator = new(Envs.Rand);
+        List<Example> exs = inputs.Zip(outputs, (ins, outs) => (ins, outs))
+                                  .Select(p => new Example(p.ins, p.outs))
+                                  .ToList();
+        synthesizer = new(exs, max_results, max_complexity);
 
         new Thread(() => {
             Thread.CurrentThread.IsBackground = true;
-            Generate(inputs, outputs);
+            Generate();
         }).Start();
     }
 
-    public static void Generate(List<List<object>> inputs, List<List<object>> outputs) {
-        var examples = Utils.Range(0, outputs.Count - 1).Select(i => {
-            return new Example((EnvType)(i + 1), outputs[i]);
-        }).ToList();
-
-        search = new(examples, max_results, max_complexity);
-        search.FindAllASTs(generator);
-        search.SortResults(generator);
-
+    public static void Generate() {
+        synthesizer.Run();
+        search = synthesizer.searcher;
         results_changed = true;
     }
 
@@ -79,23 +73,22 @@ public class VSynthManager {
                 var (out_err, h_err, ast) = r;
 
                 outputStr.AppendLine("Output Error: " + out_err + " Drawing Error: " + h_err);
-                outputStr.Append(Utils.CodifyAST(search, ast) + "\n\n");
+                outputStr.Append(Utils.CodifyAST(synthesizer.generator, ast) + "\n\n");
 
-                var vecs = search.examples.Select(ex => {
+                var vecs = synthesizer.envs.ExampleEnvs.Select(env => {
                     var vec = new DrawnVector();
-                    var origin = VecManager.origins[(int)ex.env_type - 1];
+                    var origin = VecManager.origins[env.id];
                     vec.SetPointPos(0, origin);
-                    vec.SetPointPos(1, origin + (Vector3) ast.vals[ex.env_type]);
+                    vec.SetPointPos(1, origin + (Vector3) ast.vals[env.id]);
                     vec.color = Color.green;
                     return vec;
                 }).ToList();
 
                 var go = GameObject.Instantiate(result_prefab);
-                go.GetComponentInChildren<Text>().text = Utils.StringifyAST(search, ast);
+                go.GetComponentInChildren<Text>().text = Utils.StringifyAST(synthesizer.generator, ast);
                 go.GetComponentInChildren<Toggle>().onValueChanged
                   .AddListener(is_shown => vecs.ForEach(vec => vec.shown = is_shown));
                 go.transform.SetParent(parent.transform, false);
-
                 result_objects.Add((go, vecs));
             });
         });
