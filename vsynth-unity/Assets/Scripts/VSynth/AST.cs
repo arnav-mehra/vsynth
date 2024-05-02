@@ -12,38 +12,38 @@ public class AST {
         op = o;
         args = a;
         vals = new object[env_cnt];
-        complexity = a.Aggregate(o.Complexity(), (t, ch) => t + ch.complexity);
+        complexity = a.Aggregate(o.Complexity, (t, ch) => t + ch.complexity);
     }
 
     public AST(object val, int env_id, int env_cnt) {
-        op = Op.None;
+        op = Ops.None;
         vals[env_id] = val;
         vals = new object[env_cnt];
         complexity = 0;
     }
 
     public AST(List<object> _vals) {
-        op = Op.None;
+        op = Ops.None;
         vals = _vals.ToArray();
         complexity = 0;
     }
 
     public object Eval(int env_id) => vals[env_id] = op switch {
-        Op.None => vals[env_id],
-        Op op => op.Eval(args.ConvertAll(a => a.vals[env_id]))
+        NoOp => vals[env_id],
+        _ => op.Eval(args.ConvertAll(a => a.vals[env_id]))
     };
 
     public object ReEval(int env_id) => vals[env_id] = op switch {
-        Op.None => vals[env_id],
-        Op op => op.Eval(args.ConvertAll(a => a.ReEval(env_id)))
+        NoOp => vals[env_id],
+        _ => op.Eval(args.ConvertAll(a => a.ReEval(env_id)))
     };
 
     public Derivative Diff(int env_id, AST wrt, int coord) => op switch {
-        Op.None when vals[env_id] is Vector3 && wrt != this => new Derivative.FV(Vector3.zero),
-        Op.None when vals[env_id] is Vector3 && coord == 0  => new Derivative.FV(new(1.0f, 0.0f, 0.0f)),
-        Op.None when vals[env_id] is Vector3 && coord == 1  => new Derivative.FV(new(0.0f, 1.0f, 0.0f)),
-        Op.None when vals[env_id] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
-        Op op => op.Diff(env_id, args, wrt, coord)
+        NoOp when vals[env_id] is Vector3 && wrt != this => new Derivative.FV(Vector3.zero),
+        NoOp when vals[env_id] is Vector3 && coord == 0  => new Derivative.FV(new(1.0f, 0.0f, 0.0f)),
+        NoOp when vals[env_id] is Vector3 && coord == 1  => new Derivative.FV(new(0.0f, 1.0f, 0.0f)),
+        NoOp when vals[env_id] is Vector3 && coord == 2  => new Derivative.FV(new(0.0f, 0.0f, 1.0f)),
+        _ => op.Diff(env_id, args, wrt, coord)
     };
 
     public bool IsValid(int env_id) => vals[env_id] switch {
@@ -53,17 +53,23 @@ public class AST {
     };
 
     public override string ToString() => op switch {
-        Op.None => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
-        Op.Mag => "|" + args[0] + "|",
-        Op.FlI => "(1 / " + args[0] + ")",
-        Op.FlN => "(-" + args[0] + ")",
-        Op.Neg => "(-" + args[0] + ")",
-        Op.Dst => "|"  + args[0] + " - " + args[1] + "|",
-        Op op  => "("  + args[0] + " " + op.Str() + " " + args[1] + ")",
+        NoOp => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
+        UnOp op => "("  + op + " " + args[0] + ")",
+        BinOp op => "("  + args[0] + " " + op + " " + args[1] + ")",
+        _ => "(unknown op)",
+        /*Eval.Mag => "|" + args[0] + "|",
+        Ops.FlI => "(1 / " + args[0] + ")",
+        Ops.FlN => "(-" + args[0] + ")",
+        Ops.Neg => "(-" + args[0] + ")",
+        Ops.Dst => "|"  + args[0] + " - " + args[1] + "|",*/
 	};
 
     public string ToCode() => op switch {
-        Op.None => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
+        NoOp => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
+        UnOp op => "("  + op + " " + args[0] + ")",
+        BinOp op => "("  + args[0] + " " + op + " " + args[1] + ")",
+        _ => "(unknown op)",
+        /*Op.None => vals.First().ToString().Replace('(', '<').Replace(')', '>'),
         Op.Mag => "Vector3.Magnitude(" + args[0].ToCode() + ")",
         Op.Dst => "Vector3.Distance("  + args[0].ToCode() + ", " + args[1].ToCode() + ")",
         Op.Cro => "Vector3.Cross("     + args[0].ToCode() + ", " + args[1].ToCode() + ")",
@@ -75,6 +81,6 @@ public class AST {
         Op.Neg => "(-" + args[0].ToCode() + ")",
         Op.ScM => "(" + args[0].ToCode() + " * " + args[1].ToCode() + ")",
         Op.ScD => "(" + args[0].ToCode() + " / " + args[1].ToCode() + ")",
-        Op op => "(" + args[0].ToCode() + " " + op.Str() + " " + args[1].ToCode() + ")"
+        Op op => "(" + args[0].ToCode() + " " + op.Str() + " " + args[1].ToCode() + ")"*/
 	};
 }

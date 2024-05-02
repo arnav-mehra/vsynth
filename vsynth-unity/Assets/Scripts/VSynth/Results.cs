@@ -35,7 +35,7 @@ public class ResultBuffer : List<(float out_err, float h_err, AST ast)> {
 
             ex_envs.ForEach(env => {
                 var target = (Vector3)env.outputs[target_idx];
-                var h_err = GradientDescent.Run(env.id, ast, target, generator.prg_bank.var_asts);
+                var h_err = GradientDescent.Run(env.id, ast, target, generator.program_bank.VarASTs);
                 total_h_err += h_err;
             });
 

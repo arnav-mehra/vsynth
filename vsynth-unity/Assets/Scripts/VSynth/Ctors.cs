@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using static TypeExt;
-
 public static class Ctors {
     static readonly List<float> STD_ANGLES = new() { 180.0f };
     
@@ -13,30 +11,30 @@ public static class Ctors {
         ))
     );
 
-    public static List<(Op op, Type t, Func<AST, AST> fn)> MakeUnaryCtors(int env_cnt) => (
+    public static List<(UnOp op, Func<AST, AST> fn)> MakeUnaryCtors(int env_cnt) => (
         new() {
-            (Op.Mag, VEC_TYPE, a => new AST(Op.Mag, new() { a }, env_cnt)),
-            (Op.Neg, VEC_TYPE, a => new AST(Op.Neg, new() { a }, env_cnt)),
-            (Op.FlI, FLT_TYPE, a => new AST(Op.FlI, new() { a }, env_cnt)),
-            (Op.FlN, FLT_TYPE, a => new AST(Op.FlN, new() { a }, env_cnt)),
+            (Ops.Mag, a => new AST(Ops.Mag, new() { a }, env_cnt)),
+            (Ops.Neg, a => new AST(Ops.Neg, new() { a }, env_cnt)),
+            (Ops.FlI, a => new AST(Ops.FlI, new() { a }, env_cnt)),
+            (Ops.FlN, a => new AST(Ops.FlN, new() { a }, env_cnt)),
         }
     );
 
-    public static List<(Op op, Type t1, Type t2, Func<AST, AST, AST> fn)> MakeBinaryCtors(int env_cnt) => (
+    public static List<(BinOp op, Func<AST, AST, AST> fn)> MakeBinaryCtors(int env_cnt) => (
         new() {
-            (Op.Add, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Add, new() { a, b }, env_cnt)),
-            (Op.Cro, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Cro, new() { a, b }, env_cnt)),
-            (Op.ScM, VEC_TYPE, FLT_TYPE, (a, b) => new AST(Op.ScM, new() { a, b }, env_cnt)),
-            (Op.Dot, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Dot, new() { a, b }, env_cnt)),
-            (Op.FlM, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlM, new() { a, b }, env_cnt)),
-            (Op.FlA, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlA, new() { a, b }, env_cnt)),
+            (Ops.Add, (a, b) => new AST(Ops.Add, new() { a, b }, env_cnt)),
+            (Ops.Cro, (a, b) => new AST(Ops.Cro, new() { a, b }, env_cnt)),
+            (Ops.ScM, (a, b) => new AST(Ops.ScM, new() { a, b }, env_cnt)),
+            (Ops.Dot, (a, b) => new AST(Ops.Dot, new() { a, b }, env_cnt)),
+            (Ops.FlM, (a, b) => new AST(Ops.FlM, new() { a, b }, env_cnt)),
+            (Ops.FlA, (a, b) => new AST(Ops.FlA, new() { a, b }, env_cnt)),
 
             /*
-            (Op.FlD, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlD, new() { a, b }, env_cnt)),
-            (Op.FlS, FLT_TYPE, FLT_TYPE, (a, b) => new AST(Op.FlS, new() { a, b }, env_cnt)),
-            (Op.ScD, VEC_TYPE, FLT_TYPE, (a, b) => new AST(Op.ScD, new() { a, b }, env_cnt)),
-            (Op.Sub, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Sub, new() { a, b }, env_cnt)),
-            (Op.Sub, VEC_TYPE, VEC_TYPE, (a, b) => new AST(Op.Sub, new() { b, a }, env_cnt)),
+            (Ops.FlD, (a, b) => new AST(Ops.FlD, new() { a, b }, env_cnt)),
+            (Ops.FlS, (a, b) => new AST(Ops.FlS, new() { a, b }, env_cnt)),
+            (Ops.ScD, (a, b) => new AST(Ops.ScD, new() { a, b }, env_cnt)),
+            (Ops.Sub, (a, b) => new AST(Ops.Sub, new() { a, b }, env_cnt)),
+            (Ops.Sub, (a, b) => new AST(Ops.Sub, new() { b, a }, env_cnt)),
             */
         }
     );

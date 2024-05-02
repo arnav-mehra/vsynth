@@ -20,7 +20,7 @@ public class Searcher {
         ex_envs.ExampleEnvs.ForEach(env => {
             var env_map = generator.seed.CreateVarMapping(env);
 
-            generator.prg_bank.var_asts.ForEach(a => {
+            generator.program_bank.VarASTs.ForEach(a => {
                 a.vals[env.id] = env_map[a.vals[generator.seed.id]];
                 AddAST(ex_envs, a);
             });
@@ -31,7 +31,7 @@ public class Searcher {
     }
 
     void TransposeRow(Envs ex_envs, Generator generator, int complexity) {
-        generator.prg_bank[complexity].ForEach(a => {
+        generator.program_bank[complexity].ForEach(a => {
             ex_envs.ForEach(env => a.Eval(env.id));
             AddAST(ex_envs, a);
         });
