@@ -3,7 +3,22 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - left_finger_tip
+  - right_finger_tip
+  - complexity-slider
+  - num-results-slider
+  - generate-button
+  - clear-button
+  - debug-text
+  - num-results-slider-text
+  - complexity-slider-text
+  - example-result
+  - example-sphere
+  - example-cylinder
+  - result-box
+  - new-example-button
+  - use-output-error-checkbox
   layers:
   - Default
   - TransparentFX

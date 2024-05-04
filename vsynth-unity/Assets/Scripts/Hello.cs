@@ -1,30 +1,32 @@
-using UnityEngine;
 using System.Collections.Generic;
-
-using static Assets.Scripts.Test.Test;
-using Assets.Scripts.Test;
-using Assets.Scripts.LSC;
+using UnityEngine;
 
 public class Hello : MonoBehaviour {
     void Start() {
-        /*
-        var synth = new Synth(
+        var ex1 = new Example(
             new() {
                 new Vector3(1, 0, 3),
                 new Vector3(-1, 4, 2)
             },
-            new Vector3(0.5f, 0, 1.5f)
+            new() {
+                new Vector3(0.5f, 0, 1.5f)
+            }
         );
-        */
-        
-        var synth = new Synth(2);
 
-        List<object> env = new() {
-            //new Vector3(-0.1003472f, -0.7958283f, -0.5304268f),
-            //new Vector3(0.520802f, 0.3288752f, -0.006259157f)
-            UnityEngine.Random.insideUnitSphere,
-            UnityEngine.Random.insideUnitSphere
-        };
+        var ex2 = new Example(
+            new() {
+                new Vector3(1, 0, 3),
+                new Vector3(1, -4, -2)
+            },
+            new() {
+                new Vector3(-0.5f, 0, -1.5f)
+            }
+        );
+
+        List<Example> exs = new() { ex1, ex2 };
+        Test.Find(exs, 8);
+
+        //Test.GD(user_env, targets);
 
         /*List<(int, int)> res = new();
         for (int i = 1; i <= 15; i++) {
@@ -35,6 +37,5 @@ public class Hello : MonoBehaviour {
         string s = "";
         res.ForEach(p => s += "(" + p.Item1 + ", " + p.Item2 + "), ");
         Debug.Log(s);*/
-        TestGen(synth, 7);
     }
 }

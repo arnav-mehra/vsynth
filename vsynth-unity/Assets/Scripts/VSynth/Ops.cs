@@ -1,44 +1,82 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
-namespace System.Runtime.CompilerServices { // this fixes a bug w/ 2019 vs and records
+namespace System.Runtime.CompilerServices {
     internal static class IsExternalInit {}
 }
 
-namespace Assets.Scripts.Ops {
-	public class Ops {
-        public enum Op {
-            None, // returns some literal
-            Add, Sub, Cro, Rot, ScM, ScD, // returns vector
-            Dst, Dot, Mag, FlM, FlD, FlA, FlS // returns float
-        }
+public record Op(
+    int Complexity,
+    Func<List<object>, object> Eval,
+    Func<int, List<AST>, AST, int, Derivative> Diff,
+    Type RetType,
+    string Str
+);
 
-        public static Vector3 Add(Vector3 a, Vector3 b) => a + b;
-        public static Vector3 Sub(Vector3 a, Vector3 b) => a - b;
-        public static Vector3 Cro(Vector3 a, Vector3 b) => Vector3.Cross(a, b);
-        public static Vector3 Rot(Vector3 a, Vector3 b, float c) => Quaternion.AngleAxis(c, b) * a;
-        public static Vector3 ScM(Vector3 b, float a) => a * b;
-        public static Vector3 ScD(Vector3 b, float a) => (1.0f / a) * b;
+public record UnOp(
+    int Complexity,
+    Func<List<object>, object> Eval,
+    Func<int, List<AST>, AST, int, Derivative> Diff,
+    Type InputType,
+    Type RetType,
+    string Str
+) : Op(Complexity, Eval, Diff, RetType, Str);
 
-        public static float Dst(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
-        public static float Dot(Vector3 a, Vector3 b) => Vector3.Dot(a, b);
-        public static float Mag(Vector3 a) => Vector3.Magnitude(a);
-        public static float FlM(float a, float b) => a * b;
-        public static float FlD(float a, float b) => a / b;
-        public static float FlA(float a, float b) => a + b;
-        public static float FlS(float a, float b) => a - b;
-    }
+public record BinOp(
+    int Complexity,
+    Func<List<object>, object> Eval,
+    Func<int, List<AST>, AST, int, Derivative> Diff,
+    (Type _1, Type _2) InputTypes,
+    Type RetType,
+    string Str
+) : Op(Complexity, Eval, Diff, RetType, Str);
 
-    public static class ComplexityExt {
-        readonly static int[] COMPLEXITIES = {
-            0, // None,
-            1, 1, 2, 3, 1, 1, // Add, Sub, Cro, Rot, ScM, ScD,
-            2, 1, 1, 1, 1, 1, 1 // Dst, Dot, Mag, FlM, FlD, FlA, FlS
-        };
-        public const int MIN_OP_C = 1;
-        public const int MAX_OP_C = 3;
+public record NoOp() : Op(0, null, null, null, null);
 
-        public static int Complexity(this Ops.Op op) {
-            return COMPLEXITIES[(int)op];
-        }
-    }
+public class Ops {
+    public static NoOp None = new();
+
+    public static BinOp Add = new(1, Eval.Add, Derivative.FV.Add, (Types.VEC_TYPE, Types.VEC_TYPE), Types.VEC_TYPE, "+");
+    public static BinOp Sub = new(1, Eval.Sub, Derivative.FV.Add, (Types.VEC_TYPE, Types.VEC_TYPE), Types.VEC_TYPE, "-");
+    public static BinOp Cro = new(2, Eval.Cro, Derivative.FV.Cro, (Types.VEC_TYPE, Types.VEC_TYPE), Types.VEC_TYPE, "^");
+    public static BinOp ScM = new(1, Eval.ScM, Derivative.FV.ScM, (Types.VEC_TYPE, Types.FLT_TYPE), Types.VEC_TYPE, "×");
+    public static BinOp ScD = new(1, Eval.ScD, Derivative.FV.ScD, (Types.VEC_TYPE, Types.FLT_TYPE), Types.VEC_TYPE, "÷");
+    public static BinOp Dot = new(1, Eval.Dot, Derivative.FF.Dot, (Types.VEC_TYPE, Types.VEC_TYPE), Types.FLT_TYPE, "·");
+    public static BinOp Dst = new(2, Eval.Dst, null,              (Types.VEC_TYPE, Types.VEC_TYPE), Types.FLT_TYPE, "to");
+    public static BinOp FlA = new(1, Eval.FlA, Derivative.FF.FlA, (Types.FLT_TYPE, Types.FLT_TYPE), Types.FLT_TYPE, "+");
+    public static BinOp FlS = new(1, Eval.FlS, Derivative.FF.FlS, (Types.FLT_TYPE, Types.FLT_TYPE), Types.FLT_TYPE, "-");
+    public static BinOp FlM = new(1, Eval.FlM, Derivative.FF.FlM, (Types.FLT_TYPE, Types.FLT_TYPE), Types.FLT_TYPE, "×");
+    public static BinOp FlD = new(1, Eval.FlD, Derivative.FF.FlD, (Types.FLT_TYPE, Types.FLT_TYPE), Types.FLT_TYPE, "÷");
+
+    public static UnOp Neg = new(1, Eval.Neg, Derivative.FV.Neg, Types.VEC_TYPE, Types.VEC_TYPE, "-");
+    public static UnOp Mag = new(2, Eval.Mag, Derivative.FF.Mag, Types.VEC_TYPE, Types.FLT_TYPE, "mag");
+    public static UnOp FlN = new(1, Eval.FlN, Derivative.FF.FlN, Types.FLT_TYPE, Types.FLT_TYPE, "-");
+    public static UnOp FlI = new(1, Eval.FlI, Derivative.FF.FlI, Types.FLT_TYPE, Types.FLT_TYPE, "1.0 /");
+}
+
+public static class Eval {
+    // core ops
+    public static object Add(List<object> args) => (Vector3)args[0] + (Vector3)args[1];
+    public static object Cro(List<object> args) => Vector3.Cross((Vector3)args[0], (Vector3)args[1]);
+    public static object ScM(List<object> args) => (Vector3)args[0] * (float)args[1];
+    public static object Dot(List<object> args) => Vector3.Dot((Vector3)args[0], (Vector3)args[1]);
+    public static object Mag(List<object> args) => Vector3.Magnitude((Vector3)args[0]);
+    public static object Neg(List<object> args) => -(Vector3)args[0];
+    public static object FlM(List<object> args) => (float)args[0] * (float)args[1];
+    public static object FlA(List<object> args) => (float)args[0] + (float)args[1];
+    public static object FlI(List<object> args) => 1.0f / (float)args[0];
+    public static object FlN(List<object> args) => -(float)args[0];
+
+    // redundant ops (compositions of core ops)
+    public static object Dst(List<object> args) => Vector3.Distance((Vector3)args[0], (Vector3)args[1]);
+    public static object Sub(List<object> args) => (Vector3)args[0] - (Vector3)args[1];
+    public static object FlD(List<object> args) => (float)args[0] / (float)args[1];
+    public static object ScD(List<object> args) => (Vector3)args[0] * (1.0f / (float)args[1]);
+    public static object FlS(List<object> args) => (float)args[0] - (float)args[1];
+}
+
+public static class Types {
+    static readonly public Type FLT_TYPE = typeof(float);
+    static readonly public Type VEC_TYPE = typeof(Vector3);
 }
